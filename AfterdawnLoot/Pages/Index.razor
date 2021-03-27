@@ -1,0 +1,353 @@
+﻿@page "/"
+@inject UserManager<IdentityUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject AfterdawnDataServices dataservice
+@inject NavigationManager UriHelper
+
+<AuthorizeView>
+    <Authorized>
+        @*<h1>Hello, @CurrentUser.Identity.Name!</h1>*@
+        <table id="characters">
+            @if (playerscores.Any())
+            {
+                <tr>
+                    <th>Details</th>
+                    <th @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Owner).ToList())">Owner</th>
+                    <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.Score).ToList())">Loot Score</th>
+                    <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalReceived).ToList())">Loot Received</th>
+                    <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalGiven).ToList())">Loot Given</th>
+                    <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalAttendance).ToList())">Total Attendance</th>
+                    <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.WeeklyAttendance).ToList())">Weekly Attendance</th>
+                    <th @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Name).ToList())">Character</th>
+                    <th @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Class).ToList())">Class</th>
+                    <th>Main</th>
+                    <th>Social</th>
+                    <th>Comment</th>
+                </tr>
+                @foreach (var playchar in playerscores)
+                {
+                    if (playchar.IsMain == 1)
+                    {
+                        <tr class="@playchar.Class">
+                            <td  @onclick="(() => ExaminePlayer(playchar))"><img src="magni.png" /></td>
+                            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+                            {
+                                <td @onclick="(() => ChangeOwner(playchar))">@playchar.Owner</td>
+                            }
+                            else
+                            {
+                                <td>@playchar.Owner</td>
+                            }
+                            <td>@playchar.Score.ToString()</td>
+                            <td>@playchar.TotalReceived.ToString()</td>
+                            <td>@playchar.TotalGiven.ToString()</td>
+                            <td>@playchar.TotalAttendance.ToString()</td>
+                            <td>@playchar.WeeklyAttendance.ToString()</td>
+                            <td>@playchar.Name</td>
+                            <td>@playchar.Class</td>
+                            <td>@playchar.IsMain</td>
+                            <td>@playchar.IsSocial</td>
+                            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+                            {
+                                <td @onclick="(() => ChangeComment(playchar))">@playchar.Comment</td>
+                            }
+                            else
+                            {
+                                <td>@playchar.Comment</td>
+                            }
+                        </tr>
+                    }
+                }
+            }
+            else
+            {
+                <tr><td colspan="6"><strong>No players in the system yet</strong></td></tr>
+            }
+        </table>
+        @if (@context.User.IsInRole(ADMINISTRATION_ROLE))
+        {
+            @*<br /><p>You can only see this if you're in the 'Administrators' role.</p>*@
+        }
+        <br />
+        @if (ShowOwnerPopup)
+        {
+            <!-- This is the popup to create or edit a user -->
+            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Set Main for @currentplayer.Name</h3>
+                            <!-- Button to close the popup -->
+                            <button type="button" class="close"
+                                    @onclick="CloseOwnerPopup">
+                                <span aria-hidden="true">X</span>
+                            </button>
+                        </div>
+                        <!-- Edit form for the current user -->
+                        <div class="modal-body">
+
+                            <select class="form-control"
+                                    placeholder="New Owner"
+                                    @bind="newOwner">
+                                @foreach (var p in players)
+                                {
+                                    <option>@p.Name</option>
+                                }
+                            </select>
+                            <br /><br />
+                            <!-- Button to save the user -->
+                            <button class="btn btn-primary"
+                                    @onclick="SaveOwnerChange">
+                                Save
+                            </button>
+                            <span style="color:red">@strError</span>
+                            <br />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        @if (ShowCommentPopup)
+        {
+            <!-- This is the popup to create or edit a user -->
+            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Set Comment for @currentplayer.Name</h3>
+                            <!-- Button to close the popup -->
+                            <button type="button" class="close"
+                                    @onclick="CloseCommentPopup">
+                                <span aria-hidden="true">X</span>
+                            </button>
+                        </div>
+                        <!-- Edit form for the current user -->
+                        <div class="modal-body">
+
+                            <textarea class="form-control" cols="80"
+                                      placeholder="Comment"
+                                      @bind="newComment" />
+                            <br /><br />
+                            <!-- Button to save the user -->
+                            <button class="btn btn-primary"
+                                    @onclick="SaveCommentChange">
+                                Save
+                            </button>
+                            <span style="color:red">@strError</span>
+                            <br />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <p>You are not authorized to view this page</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    string ADMINISTRATION_ROLE = "Administrators";
+
+    List<PlayerCharacters> playerCharacters = new List<PlayerCharacters>();
+    List<Attendance> Attendances = new List<Attendance> { };
+    List<Raids> raids = new List<Raids> { };
+    PlayerCharacters currentplayer;
+    bool ShowOwnerPopup = false;
+    bool ShowCommentPopup = false;
+    string strError;
+    string newOwner = "";
+    string newComment = "";
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    List<Players> players;
+    private IEnumerable<Claim> _claims = Enumerable.Empty<Claim>();
+    private List<LootResults> lootresults;
+    private List<PlayerCharacterScores> playerscores = new List<PlayerCharacterScores> { };
+    private List<CharacterLoot> characterloot;
+
+    System.Security.Claims.ClaimsPrincipal CurrentUser;
+    protected override async Task OnInitializedAsync()
+    {
+        CurrentUser = (await authenticationStateTask).User;
+        playerCharacters = await dataservice.GetPlayerCharactersAsync();
+        playerCharacters = playerCharacters.OrderBy(x => x.Name).ToList();
+        lootresults = await dataservice.GetLootResultsAsync();
+        Globals.global_lootresults = lootresults;
+        Attendances = await dataservice.GetAttendanceAsync();
+        players = await dataservice.GetPlayersAsync();
+        raids = await dataservice.GetRaidsAsync();
+        characterloot = await dataservice.GetCharacterLootAsync();
+        Globals.global_raids = raids;
+        Globals.global_loot = characterloot;
+        Globals.global_attendance = Attendances;
+        Globals.player_char = playerCharacters;
+        updateplayerscores();
+    }
+
+    private void updateplayerscores(bool force = false)
+    {
+        if (force)
+
+            playerscores = new List<PlayerCharacterScores>();
+        foreach (var p in playerCharacters)
+        {
+            PlayerCharacterScores newscore = new PlayerCharacterScores(p);
+            newscore.TotalAttendance = GetAttendance(p);
+            newscore.WeeklyAttendance = GetThisWeekAttendance(p);
+            newscore.LootReceived = GetReceived(p);
+            newscore.LootGiven = GetGiven(p);
+            newscore.TotalGiven = newscore.LootGiven.Count() * 3.0M;
+            newscore.TotalReceived = newscore.LootReceived.Count() * 6.0M;
+            newscore.Score = newscore.TotalGiven - newscore.TotalReceived + newscore.TotalAttendance;
+            playerscores.Add(newscore);
+        }
+        playerscores = playerscores.OrderByDescending(x => x.Score).ToList();
+    }
+
+    private void ExaminePlayer(PlayerCharacters playchar)
+    {
+        Globals.UserID = playchar.UserID;
+        UriHelper.NavigateTo("/userdetails/" + playchar.UserID, true);
+    }
+
+    private void ChangeOwner(PlayerCharacters playchar)
+    {
+        currentplayer = playchar;
+        ShowOwnerPopup = true;
+    }
+
+    private void CloseOwnerPopup()
+    {
+        ShowOwnerPopup = false;
+    }
+
+    private async void SaveOwnerChange()
+    {
+        var newOwnerPlayer = players.Where(p => p.Name == newOwner);
+
+        var v = await dataservice.GetCharactersAsync();
+        var updateplayer = v.Where(x => x.Name == currentplayer.Name).FirstOrDefault();
+        updateplayer.UserID = newOwnerPlayer.FirstOrDefault().UserID;
+        await dataservice.UpdateCharactersAsync(updateplayer);
+        playerCharacters = await dataservice.GetPlayerCharactersAsync();
+
+        Attendances = await dataservice.GetAttendanceAsync();
+        players = await dataservice.GetPlayersAsync();
+        raids = await dataservice.GetRaidsAsync();
+        Globals.global_raids = raids;
+        Globals.global_attendance = Attendances;
+        Globals.player_char = playerCharacters;
+        ShowOwnerPopup = false;
+    }
+
+    private void ChangeComment(PlayerCharacters playchar)
+    {
+        currentplayer = playchar;
+        newComment = playchar.Comment;
+        ShowCommentPopup = true;
+    }
+
+    private void CloseCommentPopup()
+    {
+        ShowCommentPopup = false;
+    }
+
+    private async void SaveCommentChange()
+    {
+        var v = await dataservice.GetCharactersAsync();
+        var updateplayer = v.Where(x => x.Name == currentplayer.Name).FirstOrDefault();
+        updateplayer.Comment = newComment;
+        await dataservice.UpdateCharactersAsync(updateplayer);
+        playerscores.Where(p => p.Name == currentplayer.Name).FirstOrDefault().Comment = newComment;
+        ShowCommentPopup = false;
+    }
+
+
+
+    private decimal GetAttendance(PlayerCharacters playchar)
+    {
+        decimal total = 0;
+        foreach (var p in playerCharacters)
+        {
+            if (p.Owner == playchar.Owner)
+            {
+
+                var t = Attendances.Where(a => a.CharacterName == p.Name).Sum(i => i.PresentEnd) + Attendances.Where(a => a.CharacterName == p.Name).Sum(i => i.PresentStart);
+                total += Convert.ToDecimal(t) / 2;
+            }
+        }
+        return total;
+    }
+
+    private Int64 GetThisWeeksRaidID()
+    {
+        var cultureInfo = new System.Globalization.CultureInfo("en-GB");
+        foreach (var r in raids)
+        {
+            if (Convert.ToDateTime(r.TimeStamp, cultureInfo) > DateTime.Now - new TimeSpan(7, 0, 0, 0, 0))
+            {
+                return r.ID;
+            }
+        }
+        return Int64.MaxValue;
+    }
+
+
+    private decimal GetThisWeekAttendance(PlayerCharacters playchar)
+    {
+        decimal total = 0;
+        foreach (var p in playerCharacters)
+        {
+            if (p.Owner == playchar.Owner)
+            {
+
+                var t = Attendances.Where(a => a.CharacterName == p.Name).Where(c => c.RaidID >= GetThisWeeksRaidID()).Sum(i => i.PresentEnd) + Attendances.Where(a => a.CharacterName == p.Name).Sum(i => i.PresentStart);
+                total += Convert.ToDecimal(t) / 2;
+            }
+        }
+        return total;
+    }
+
+    private List<Tuple<DateTime, string>> GetGiven(PlayerCharacters playchar)
+    {
+        var cultureInfo = new System.Globalization.CultureInfo("en-GB");
+        List<Tuple<DateTime, string>> givenlist = new List<Tuple<DateTime, string>>();
+        var chars = playerCharacters.Where(x => x.Owner == playchar.Owner);
+        foreach (var chr in chars)
+        {
+            var ploot = characterloot.Where(x => x.SourceCharacter == chr.Name);
+            foreach (var loot in ploot)
+            {
+                string lresult = lootresults.Where(x => x.ID == loot.LootResult).Select(a => a.Description).FirstOrDefault().ToString();
+                if (!lresult.ToLower().Contains("personal"))
+                    givenlist.Add(new Tuple<DateTime, string>(Convert.ToDateTime(loot.TimeStamp, cultureInfo), loot.Item));
+            }
+        }
+        return givenlist;
+    }
+
+    private List<Tuple<DateTime, string>> GetReceived(PlayerCharacters playchar)
+    {
+        var cultureInfo = new System.Globalization.CultureInfo("en-GB");
+        List<Tuple<DateTime, string>> reclist = new List<Tuple<DateTime, string>>();
+        var chars = playerCharacters.Where(x => x.Owner == playchar.Owner);
+        foreach (var chr in chars)
+        {
+            var ploot = characterloot.Where(x => x.Character == chr.Name);
+            foreach (var loot in ploot)
+            {
+                string lresult = lootresults.Where(x => x.ID == loot.LootResult).Select(a => a.Description).FirstOrDefault().ToString();
+                if (!lresult.ToLower().Contains("disenchant")
+                    && !lresult.ToLower().Contains("pass")
+                    && !lresult.ToLower().Contains("awarded")
+                    && !lresult.ToLower().Contains("off")
+                    && !lresult.ToLower().Contains("transmog")
+                    && !lresult.ToLower().Contains("personal"))
+                    reclist.Add(new Tuple<DateTime, string>(Convert.ToDateTime(loot.TimeStamp, cultureInfo), loot.Item));
+            }
+        }
+        return reclist;
+    }
+}
