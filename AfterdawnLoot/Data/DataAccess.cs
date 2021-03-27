@@ -79,7 +79,7 @@ namespace AfterdawnLoot
 
     public partial class Characters
     {
-        [PrimaryKey]
+        [PrimaryKey, System.ComponentModel.DataAnnotations.Key]
         public String Name { get; set; }
 
         [NotNull]
