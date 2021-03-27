@@ -1,0 +1,577 @@
+@page "/manageraids"
+
+@using AfterdawnLoot.Data
+@inject AfterdawnDataServices dataservice
+@inject NavigationManager UriHelper
+@inject UserManager<IdentityUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+    <AuthorizeView>
+        <Authorized>
+
+            <h1>Afterdawn Raids</h1>
+
+
+            @if (raids == null)
+            {
+            <p><em>Loading...</em></p>
+            }
+            else
+            {
+            <table id="characters" class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Date</th>
+                        @*<th>Is Complete?</th>*@
+                        <th>Starting Att.</th>
+                        <th>Ending Att.</th>
+                        <th>Loot</th>
+                        @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
+                        {
+                            <th>Admin</th>
+                        }
+                        </tr>
+                </thead>
+                <tbody>
+                    @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
+                        {
+                            foreach (var raid in raids)
+                            {
+                    <tr>
+                        <td>@raid.ID</td>
+                        <td>@raid.RaidName</td>
+                        <td>@Convert.ToDateTime(raid.TimeStamp, cultureInfo).ToShortDateString()</td>
+                        @*<td @onclick="(() => EditRaid(raid))">@raid.IsComplete</td>*@
+                        <td class="mylink" @onclick="(() => EditStarting(raid))" data-toggle="tooltip" title="@String.Join(Environment.NewLine, attendances.Where(a => a.RaidID == raid.ID && a.PresentStart == 1).Select(r => r.CharacterName).OrderBy(x => x))">@GetStartingAttendance(raid)</td>
+                        <td @onclick="(() => EditEnding(raid))" data-toggle="tooltip" title="@String.Join(Environment.NewLine, attendances.Where(a => a.RaidID == raid.ID && a.PresentEnd == 1).Select(r => r.CharacterName).OrderBy(x => x))">@GetEndingAttendance(raid)</td>
+                        <td>
+                            <button type="button" class="Manage Loot"
+                                    @onclick="(() => ManageLoot(raid))">
+                                Manage Loot
+                            </button>
+                        </td>
+                        <td>
+                            <button type="button" class="DeleteRaid"
+                                    @onclick="(() => DeleteRaidAsk(raid))">
+                                Delete Raid
+                            </button>
+                        </td>
+                    </tr>
+                            }
+                        }
+                        else
+                        {
+                            foreach (var raid in raids)
+                            {
+                    <tr>
+                        <td>@raid.ID</td>
+                        <td>@raid.RaidName</td>
+                        <td>@Convert.ToDateTime(raid.TimeStamp, cultureInfo).ToShortDateString()</td>
+                        @*<td @onclick="(() => EditRaid(raid))">@raid.IsComplete</td>*@
+                        <td data-toggle="tooltip" title="@String.Join(Environment.NewLine, attendances.Where(a => a.RaidID == raid.ID && a.PresentStart == 1).Select(r => r.CharacterName).OrderBy(x => x))">@GetStartingAttendance(raid)</td>
+                        <td data-toggle="tooltip" title="@String.Join(Environment.NewLine, attendances.Where(a => a.RaidID == raid.ID && a.PresentEnd == 1).Select(r => r.CharacterName).OrderBy(x => x))">@GetEndingAttendance(raid)</td>
+                        <td>
+                            <button type="button" class="Manage Loot"
+                                    @onclick="(() => ManageLoot(raid))">
+                                View Loot
+                            </button>
+                        </td>
+
+                    </tr>
+                            }
+                        }
+                </tbody>
+            </table>
+            }
+            @if (ShowDeleteRaid)
+            {
+            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Delete Raid</h3>
+                            <!-- Button to close the popup -->
+                            <button type="button" class="close"
+                                    @onclick="CloseDeleteRaid">
+                                <span aria-hidden="true">X</span>
+                            </button>
+                        </div>
+                        <!-- Edit form for the current user -->
+                        <div class="modal-body">
+
+                            "Really delete this raid?"
+
+                            <br /><br />
+                            <!-- Button to save the user -->
+                            <button class="btn btn-primary"
+                                    @onclick="CloseDeleteRaid">
+                                Cancel
+                            </button>
+                            <button class="btn btn-secondary"
+                                    @onclick="DeleteRaid">
+                                DELETE
+                            </button>
+                            <span style="color:red">@strError</span>
+                            <br />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            }
+            @if (ShowStartingPopup)
+            {
+                <!-- This is the popup to create or edit a user -->
+            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Take Starting Attendance</h3>
+                            <!-- Button to close the popup -->
+                            <button type="button" class="close"
+                                    @onclick="CloseStartingPopup">
+                                <span aria-hidden="true">X</span>
+                            </button>
+                        </div>
+                        <!-- Edit form for the current user -->
+                        <div class="modal-body">
+
+                            <textarea class="form-control" rows="25"
+                                      placeholder="Attendance List"
+                                      @bind="attendancelist" />
+
+                            <br /><br />
+                            <!-- Button to save the user -->
+                            <button class="btn btn-primary"
+                                    @onclick="SaveStartingAttendance">
+                                Save
+                            </button>
+                            <button class="btn btn-secondary"
+                                    @onclick="ClearStartingAttendance">
+                                Clear
+                            </button>
+                            <span style="color:red">@strError</span>
+                            <br />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            }
+            @if (ShowEndingPopup)
+            {
+                <!-- This is the popup to create or edit a user -->
+            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Take Ending Attendance</h3>
+                            <!-- Button to close the popup -->
+                            <button type="button" class="close"
+                                    @onclick="CloseEndingPopup">
+                                <span aria-hidden="true">X</span>
+                            </button>
+                        </div>
+                        <!-- Edit form for the current user -->
+                        <div class="modal-body">
+
+                            <textarea class="form-control" rows="25"
+                                      placeholder="Attendance List"
+                                      @bind="attendancelist" />
+
+                            <br /><br />
+                            <!-- Button to save the user -->
+                            <button class="btn btn-primary"
+                                    @onclick="SaveEndingAttendance">
+                                Save
+                            </button>
+                            <button class="btn btn-secondary"
+                                    @onclick="ClearEndingAttendance">
+                                Clear
+                            </button>
+                            <span style="color:red">@strError</span>
+                            <br />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            }
+            @if (ShowPopup)
+            {
+                <!-- This is the popup to create or edit a user -->
+            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Add Raid</h3>
+                            <!-- Button to close the popup -->
+                            <button type="button" class="close"
+                                    @onclick="ClosePopup">
+                                <span aria-hidden="true">X</span>
+                            </button>
+                        </div>
+                        <!-- Edit form for the current user -->
+                        <div class="modal-body">
+
+                            <input class="form-control" type="text"
+                                   placeholder="RaidName"
+                                   @bind="newraid.RaidName" />
+
+                            <br /><br />
+                            <!-- Button to save the user -->
+                            <button class="btn btn-primary"
+                                    @onclick="SaveRaid">
+                                Save
+                            </button>
+                            <span style="color:red">@strError</span>
+                            <br />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            }
+            @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
+            {
+            <button class="btn btn-primary" @onclick="AddRaid">Add a raid</button>
+            }
+        </Authorized>
+        <NotAuthorized>
+            <p>You are not authorized to view this page</p>
+        </NotAuthorized>
+    </AuthorizeView>
+    @code {
+
+        string ADMINISTRATION_ROLE = "Administrators";
+
+        System.Security.Claims.ClaimsPrincipal CurrentUser;
+        [CascadingParameter]
+        private Task<AuthenticationState> authenticationStateTask { get; set; }
+        System.Globalization.CultureInfo cultureInfo = new System.Globalization.CultureInfo("en-GB");
+        private IEnumerable<Claim> _claims = Enumerable.Empty<Claim>();
+        private List<Raids> raids;
+        private List<string> starting_att;
+        private List<string> ending_att;
+        bool ShowPopup = false;
+        bool ShowStartingPopup = false;
+        bool ShowEndingPopup = false;
+        bool ShowDeleteRaid = false;
+        Raids newraid = new Raids();
+        string strError = "";
+        private List<Attendance> attendances;
+        private string attendancelist = "";
+        private Raids currentraid;
+        //private List<PlayerCharacters> playerCharacters;
+
+        protected override async Task OnInitializedAsync()
+        {
+            CurrentUser = (await authenticationStateTask).User;
+            raids = await dataservice.GetRaidsAsync();
+            attendances = await dataservice.GetAttendanceAsync();
+            //playerCharacters = await dataservice.GetPlayerCharactersAsync();
+        }
+
+        private void ManageLoot(Raids raid)
+        {
+            //TODO: open loot page with correct raid
+            UriHelper.NavigateTo("/manageloot/" + raid.ID, true);
+        }
+
+        private void EditRaid(Raids raid)
+        {
+            if (raid.IsComplete == 1)
+                raid.IsComplete = 0;
+            else
+                raid.IsComplete = 1;
+        }
+
+        private void EditStarting(Raids raid)
+        {
+            starting_att = new List<string> { };
+            foreach (var s in attendances.Where(a => a.RaidID == raid.ID && a.PresentStart == 1))
+            {
+                starting_att.Add(s.CharacterName);
+            }
+            attendancelist = String.Join('\n', starting_att);
+            ShowStartingPopup = true;
+            currentraid = raid;
+        }
+
+        private void EditEnding(Raids raid)
+        {
+            ending_att = new List<string> { };
+            foreach (var s in attendances.Where(a => a.RaidID == raid.ID && a.PresentEnd == 1))
+            {
+                ending_att.Add(s.CharacterName);
+            }
+            attendancelist = String.Join('\n', ending_att);
+            ShowEndingPopup = true;
+            currentraid = raid;
+        }
+
+        void CloseStartingPopup()
+        {
+            ShowStartingPopup = false;
+        }
+
+        void CloseEndingPopup()
+        {
+            ShowEndingPopup = false;
+        }
+
+
+        private void AddRaid()
+        {
+            ShowPopup = true;
+
+            newraid.TimeStamp = DateTime.Now.ToString();
+        }
+
+        void ClosePopup()
+        {
+            // Close the Popup
+            ShowPopup = false;
+        }
+
+
+        async Task SaveRaid()
+        {
+            try
+            {
+                var CreateResult = await dataservice.AddRaidsAsync(newraid);
+
+                // Close the Popup
+                ShowPopup = false;
+                // Refresh Users
+                raids = await dataservice.GetRaidsAsync();
+            }
+            catch (Exception ex)
+            {
+                strError = ex.GetBaseException().Message;
+            }
+        }
+
+        void DeleteRaidAsk(Raids raid)
+        {
+            currentraid = raid;
+            ShowDeleteRaid = true;
+        }
+
+        void CloseDeleteRaid()
+        {
+            ShowDeleteRaid = false;
+        }
+
+        async void DeleteRaid()
+        {
+            await dataservice.DeleteRaidsAsync(currentraid);
+            foreach(var att in attendances.Where(a=>a.RaidID == currentraid.ID))
+            {
+                await dataservice.DeleteAttendanceAsync(att);
+            }
+            var characterloot = await dataservice.GetCharacterLootAsync();
+            foreach (var lt in characterloot.Where(a => a.RaidID == currentraid.ID))
+            {
+                await dataservice.DeleteCharacterLootAsync(lt);
+            }
+            raids = await dataservice.GetRaidsAsync();
+            attendances = await dataservice.GetAttendanceAsync();
+            ShowDeleteRaid = false;
+        }
+
+        private int GetStartingAttendance(Raids raid)
+        {
+            starting_att = new List<string> { };
+            foreach (var s in attendances.Where(a => a.RaidID == raid.ID && a.PresentStart == 1))
+            {
+                starting_att.Add(s.CharacterName);
+            }
+            return starting_att.Count;
+        }
+
+        private int GetEndingAttendance(Raids raid)
+        {
+            ending_att = new List<string> { };
+            foreach (var s in attendances.Where(a => a.RaidID == raid.ID && a.PresentEnd == 1))
+            {
+                ending_att.Add(s.CharacterName);
+            }
+            return ending_att.Count;
+        }
+
+
+        async Task SaveStartingAttendance()
+        {
+            try
+            {
+                var players = await dataservice.GetPlayersAsync();
+                var names = attendancelist.Split('\n');
+                foreach (var name in names)
+                {
+                    var nameparts = name.Split("-");
+
+                    //add player characters if needed
+                    if (players.Where(x => x.Name == nameparts[0]).Count() == 0)
+                    {
+                        Players pnew = new Players();
+                        pnew.Name = nameparts[0];
+                        await dataservice.AddPlayersAsync(pnew);
+
+
+                        players = await dataservice.GetPlayersAsync();
+
+
+                        Characters cnew = new Characters();
+                        cnew.Name = nameparts[0];
+                        cnew.UserID = players.Where(x => x.Name == nameparts[0]).Select(y => y.UserID).FirstOrDefault();
+                        cnew.IsMain = 1;
+                        cnew.Class = "";
+                        await dataservice.AddCharactersAsync(cnew);
+                    }
+
+                    //are we updating or adding?
+                    var att = attendances.Where(a => a.CharacterName == nameparts[0]).FirstOrDefault();
+                    if (att != null)
+                    {
+                        //update
+                        att.PresentStart = 1;
+                        var CreateResult = await dataservice.UpdateAttendanceAsync(att);
+                    }
+                    else
+                    {
+                        //new entry
+                        Attendance newatt = new Attendance();
+                        newatt.CharacterName = nameparts[0];
+                        newatt.RaidID = currentraid.ID;
+                        newatt.PresentStart = 1;
+                        var CreateResult = await dataservice.AddAttendanceAsync(newatt);
+                    }
+
+                }
+
+
+                // Close the Popup
+                ShowStartingPopup = false;
+                // Refresh Users
+                attendances = await dataservice.GetAttendanceAsync();
+            }
+            catch (Exception ex)
+            {
+                strError = ex.GetBaseException().Message;
+            }
+        }
+
+        async Task ClearStartingAttendance()
+        {
+
+
+            try
+            {
+                var names = attendancelist.Split('\n');
+                foreach (var att in attendances.Where(a => a.RaidID == currentraid.ID))
+                {
+                    //update
+                    att.PresentStart = 0;
+                    var CreateResult = await dataservice.UpdateAttendanceAsync(att);
+                }
+
+
+                // Close the Popup
+                ShowStartingPopup = false;
+                // Refresh Users
+                attendances = await dataservice.GetAttendanceAsync();
+            }
+            catch (Exception ex)
+            {
+                strError = ex.GetBaseException().Message;
+            }
+        }
+
+
+        async Task ClearEndingAttendance()
+        {
+
+            try
+            {
+                var names = attendancelist.Split('\n');
+                foreach (var att in attendances.Where(a => a.RaidID == currentraid.ID))
+                {
+                    //update
+                    att.PresentEnd = 0;
+                    var CreateResult = await dataservice.UpdateAttendanceAsync(att);
+                }
+
+
+                // Close the Popup
+                ShowEndingPopup = false;
+                // Refresh Users
+                attendances = await dataservice.GetAttendanceAsync();
+            }
+            catch (Exception ex)
+            {
+                strError = ex.GetBaseException().Message;
+            }
+        }
+
+        async Task SaveEndingAttendance()
+        {
+            try
+            {
+                var players = await dataservice.GetPlayersAsync();
+                var names = attendancelist.Split('\n');
+                foreach (var name in names)
+                {
+                    var nameparts = name.Split("-");
+
+
+                    //add player characters if needed
+                    if (players.Where(x => x.Name == nameparts[0]).Count() == 0)
+                    {
+                        Players pnew = new Players();
+                        pnew.Name = nameparts[0];
+                        await dataservice.AddPlayersAsync(pnew);
+
+
+                        players = await dataservice.GetPlayersAsync();
+
+
+                        Characters cnew = new Characters();
+                        cnew.Name = nameparts[0];
+                        cnew.UserID = players.Where(x => x.Name == nameparts[0]).Select(y => y.UserID).FirstOrDefault();
+                        cnew.IsMain = 1;
+                        cnew.Class = "";
+                        await dataservice.AddCharactersAsync(cnew);
+                    }
+
+                    //are we updating or adding?
+                    var att = attendances.Where(a => a.CharacterName == nameparts[0]).FirstOrDefault();
+                    if (att != null)
+                    {
+                        //update
+                        att.PresentEnd = 1;
+                        var CreateResult = await dataservice.UpdateAttendanceAsync(att);
+                    }
+                    else
+                    {
+                        //new entry
+                        Attendance newatt = new Attendance();
+                        newatt.CharacterName = nameparts[0];
+                        newatt.RaidID = currentraid.ID;
+                        newatt.PresentEnd = 1;
+                        var CreateResult = await dataservice.AddAttendanceAsync(newatt);
+                    }
+
+                }
+
+
+                // Close the Popup
+                ShowEndingPopup = false;
+                // Refresh Users
+                attendances = await dataservice.GetAttendanceAsync();
+            }
+            catch (Exception ex)
+            {
+                strError = ex.GetBaseException().Message;
+            }
+        }
+    }
