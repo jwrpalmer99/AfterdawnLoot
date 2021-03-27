@@ -11,6 +11,7 @@
         <table id="characters">
             @if (playerscores.Any())
             {
+                <button @onclick="(() => ToggleAlts())">Toggle Alts</button>
                 <tr>
                     <th>Details</th>
                     <th @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Owner).ToList())">Owner</th>
@@ -27,10 +28,10 @@
                 </tr>
                 @foreach (var playchar in playerscores)
                 {
-                    if (playchar.IsMain == 1)
+                    if (playchar.IsMain == 1 || showAlts)
                     {
                         <tr class="@playchar.Class">
-                            <td  @onclick="(() => ExaminePlayer(playchar))"><img src="magni.png" /></td>
+                            <td @onclick="(() => ExaminePlayer(playchar))"><img src="magni.png" /></td>
                             @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
                             {
                                 <td @onclick="(() => ChangeOwner(playchar))">@playchar.Owner</td>
@@ -45,7 +46,14 @@
                             <td>@playchar.TotalAttendance.ToString()</td>
                             <td>@playchar.WeeklyAttendance.ToString()</td>
                             <td>@playchar.Name</td>
-                            <td>@playchar.Class</td>
+                            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+                            {
+                                <td @onclick="(() => ChangeClass(playchar))">@playchar.Class</td>
+                            }
+                            else
+                            {
+                                <td>@playchar.Class</td>
+                            }
                             <td>@playchar.IsMain</td>
                             <td>@playchar.IsSocial</td>
                             @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
@@ -90,7 +98,7 @@
                             <select class="form-control"
                                     placeholder="New Owner"
                                     @bind="newOwner">
-                                @foreach (var p in players)
+                                @foreach (var p in players.OrderBy(c => c.Name))
                                 {
                                     <option>@p.Name</option>
                                 }
@@ -141,6 +149,43 @@
                 </div>
             </div>
         }
+        @if (ShowClassPopup)
+        {
+            <!-- This is the popup to create or edit a user -->
+            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Set Class for @currentplayer.Name</h3>
+                            <!-- Button to close the popup -->
+                            <button type="button" class="close"
+                                    @onclick="CloseClassPopup">
+                                <span aria-hidden="true">X</span>
+                            </button>
+                        </div>
+                        <!-- Edit form for the current user -->
+                        <div class="modal-body">
+
+                            <select class="form-control"
+                                    placeholder="New Class"
+                                    @bind="newClass">
+                                @foreach (var p in Globals.classes)
+                                {
+                                    <option>@p</option>
+                                }
+                            </select>
+                            <!-- Button to save the user -->
+                            <button class="btn btn-primary"
+                                    @onclick="SaveClassChange">
+                                Save
+                            </button>
+                            <span style="color:red">@strError</span>
+                            <br />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
     </Authorized>
     <NotAuthorized>
         <p>You are not authorized to view this page</p>
@@ -149,16 +194,18 @@
 
 @code {
     string ADMINISTRATION_ROLE = "Administrators";
-
+    bool showAlts = false;
     List<PlayerCharacters> playerCharacters = new List<PlayerCharacters>();
     List<Attendance> Attendances = new List<Attendance> { };
     List<Raids> raids = new List<Raids> { };
     PlayerCharacters currentplayer;
     bool ShowOwnerPopup = false;
     bool ShowCommentPopup = false;
+    bool ShowClassPopup = false;
     string strError;
     string newOwner = "";
     string newComment = "";
+    string newClass = "";
     [CascadingParameter]
     private Task<AuthenticationState> authenticationStateTask { get; set; }
     List<Players> players;
@@ -212,6 +259,11 @@
         UriHelper.NavigateTo("/userdetails/" + playchar.UserID, true);
     }
 
+    private void ToggleAlts()
+    {
+        showAlts = !showAlts;
+    }
+
     private void ChangeOwner(PlayerCharacters playchar)
     {
         currentplayer = playchar;
@@ -229,8 +281,16 @@
 
         var v = await dataservice.GetCharactersAsync();
         var updateplayer = v.Where(x => x.Name == currentplayer.Name).FirstOrDefault();
-        updateplayer.UserID = newOwnerPlayer.FirstOrDefault().UserID;
-        await dataservice.UpdateCharactersAsync(updateplayer);
+        await dataservice.DeleteCharactersAsync(updateplayer);
+        Characters c = new Characters();
+        c.Name = currentplayer.Name;
+        if (newOwnerPlayer.First().Name == c.Name) c.IsMain = 1;
+        c.IsSocial = (long)currentplayer.IsSocial;
+        c.IsInactive = (long)currentplayer.IsInactive;
+        //c.Comment = currentplayer.Comment;
+        c.UserID = newOwnerPlayer.First().UserID;
+        c.Class = currentplayer.Class;
+        await dataservice.AddCharactersAsync(c);
         playerCharacters = await dataservice.GetPlayerCharactersAsync();
 
         Attendances = await dataservice.GetAttendanceAsync();
@@ -242,112 +302,135 @@
         ShowOwnerPopup = false;
     }
 
-    private void ChangeComment(PlayerCharacters playchar)
+
+    private void ChangeClass(PlayerCharacters playchar)
     {
         currentplayer = playchar;
-        newComment = playchar.Comment;
-        ShowCommentPopup = true;
+        newClass = playchar.Class;
+        ShowClassPopup = true;
     }
 
-    private void CloseCommentPopup()
+    private void CloseClassPopup()
     {
-        ShowCommentPopup = false;
+        ShowClassPopup = false;
     }
 
-    private async void SaveCommentChange()
+    private async void SaveClassChange()
     {
         var v = await dataservice.GetCharactersAsync();
         var updateplayer = v.Where(x => x.Name == currentplayer.Name).FirstOrDefault();
-        updateplayer.Comment = newComment;
+        updateplayer.Class = newClass;
         await dataservice.UpdateCharactersAsync(updateplayer);
-        playerscores.Where(p => p.Name == currentplayer.Name).FirstOrDefault().Comment = newComment;
-        ShowCommentPopup = false;
-    }
+        playerscores.Where(p => p.Name == currentplayer.Name).FirstOrDefault().Class = newClass;
+        ShowClassPopup = false;
+     }
 
-
-
-    private decimal GetAttendance(PlayerCharacters playchar)
-    {
-        decimal total = 0;
-        foreach (var p in playerCharacters)
+        private void ChangeComment(PlayerCharacters playchar)
         {
-            if (p.Owner == playchar.Owner)
-            {
-
-                var t = Attendances.Where(a => a.CharacterName == p.Name).Sum(i => i.PresentEnd) + Attendances.Where(a => a.CharacterName == p.Name).Sum(i => i.PresentStart);
-                total += Convert.ToDecimal(t) / 2;
-            }
+            currentplayer = playchar;
+            newComment = playchar.Comment;
+            ShowCommentPopup = true;
         }
-        return total;
-    }
 
-    private Int64 GetThisWeeksRaidID()
-    {
-        var cultureInfo = new System.Globalization.CultureInfo("en-GB");
-        foreach (var r in raids)
+        private void CloseCommentPopup()
         {
-            if (Convert.ToDateTime(r.TimeStamp, cultureInfo) > DateTime.Now - new TimeSpan(7, 0, 0, 0, 0))
-            {
-                return r.ID;
-            }
+            ShowCommentPopup = false;
         }
-        return Int64.MaxValue;
-    }
 
-
-    private decimal GetThisWeekAttendance(PlayerCharacters playchar)
-    {
-        decimal total = 0;
-        foreach (var p in playerCharacters)
+        private async void SaveCommentChange()
         {
-            if (p.Owner == playchar.Owner)
-            {
-
-                var t = Attendances.Where(a => a.CharacterName == p.Name).Where(c => c.RaidID >= GetThisWeeksRaidID()).Sum(i => i.PresentEnd) + Attendances.Where(a => a.CharacterName == p.Name).Sum(i => i.PresentStart);
-                total += Convert.ToDecimal(t) / 2;
-            }
+            var v = await dataservice.GetCharactersAsync();
+            var updateplayer = v.Where(x => x.Name == currentplayer.Name).FirstOrDefault();
+            updateplayer.Comment = newComment;
+            await dataservice.UpdateCharactersAsync(updateplayer);
+            playerscores.Where(p => p.Name == currentplayer.Name).FirstOrDefault().Comment = newComment;
+            ShowCommentPopup = false;
         }
-        return total;
-    }
 
-    private List<Tuple<DateTime, string>> GetGiven(PlayerCharacters playchar)
-    {
-        var cultureInfo = new System.Globalization.CultureInfo("en-GB");
-        List<Tuple<DateTime, string>> givenlist = new List<Tuple<DateTime, string>>();
-        var chars = playerCharacters.Where(x => x.Owner == playchar.Owner);
-        foreach (var chr in chars)
+
+
+        private decimal GetAttendance(PlayerCharacters playchar)
         {
-            var ploot = characterloot.Where(x => x.SourceCharacter == chr.Name);
-            foreach (var loot in ploot)
+            decimal total = 0;
+            foreach (var p in playerCharacters)
             {
-                string lresult = lootresults.Where(x => x.ID == loot.LootResult).Select(a => a.Description).FirstOrDefault().ToString();
-                if (!lresult.ToLower().Contains("personal"))
-                    givenlist.Add(new Tuple<DateTime, string>(Convert.ToDateTime(loot.TimeStamp, cultureInfo), loot.Item));
-            }
-        }
-        return givenlist;
-    }
+                if (p.Owner == playchar.Owner)
+                {
 
-    private List<Tuple<DateTime, string>> GetReceived(PlayerCharacters playchar)
-    {
-        var cultureInfo = new System.Globalization.CultureInfo("en-GB");
-        List<Tuple<DateTime, string>> reclist = new List<Tuple<DateTime, string>>();
-        var chars = playerCharacters.Where(x => x.Owner == playchar.Owner);
-        foreach (var chr in chars)
-        {
-            var ploot = characterloot.Where(x => x.Character == chr.Name);
-            foreach (var loot in ploot)
-            {
-                string lresult = lootresults.Where(x => x.ID == loot.LootResult).Select(a => a.Description).FirstOrDefault().ToString();
-                if (!lresult.ToLower().Contains("disenchant")
-                    && !lresult.ToLower().Contains("pass")
-                    && !lresult.ToLower().Contains("awarded")
-                    && !lresult.ToLower().Contains("off")
-                    && !lresult.ToLower().Contains("transmog")
-                    && !lresult.ToLower().Contains("personal"))
-                    reclist.Add(new Tuple<DateTime, string>(Convert.ToDateTime(loot.TimeStamp, cultureInfo), loot.Item));
+                    var t = Attendances.Where(a => a.CharacterName == p.Name).Sum(i => i.PresentEnd) + Attendances.Where(a => a.CharacterName == p.Name).Sum(i => i.PresentStart);
+                    total += Convert.ToDecimal(t) / 2;
+                }
             }
+            return total;
         }
-        return reclist;
-    }
+
+        private Int64 GetThisWeeksRaidID()
+        {
+            var cultureInfo = new System.Globalization.CultureInfo("en-GB");
+            foreach (var r in raids)
+            {
+                if (Convert.ToDateTime(r.TimeStamp, cultureInfo) > DateTime.Now - new TimeSpan(7, 0, 0, 0, 0))
+                {
+                    return r.ID;
+                }
+            }
+            return Int64.MaxValue;
+        }
+
+
+        private decimal GetThisWeekAttendance(PlayerCharacters playchar)
+        {
+            decimal total = 0;
+            foreach (var p in playerCharacters)
+            {
+                if (p.Owner == playchar.Owner)
+                {
+
+                    var t = Attendances.Where(a => a.CharacterName == p.Name).Where(c => c.RaidID >= GetThisWeeksRaidID()).Sum(i => i.PresentEnd) + Attendances.Where(a => a.CharacterName == p.Name).Sum(i => i.PresentStart);
+                    total += Convert.ToDecimal(t) / 2;
+                }
+            }
+            return total;
+        }
+
+        private List<Tuple<DateTime, string>> GetGiven(PlayerCharacters playchar)
+        {
+            var cultureInfo = new System.Globalization.CultureInfo("en-GB");
+            List<Tuple<DateTime, string>> givenlist = new List<Tuple<DateTime, string>>();
+            var chars = playerCharacters.Where(x => x.Owner == playchar.Owner);
+            foreach (var chr in chars)
+            {
+                var ploot = characterloot.Where(x => x.SourceCharacter == chr.Name);
+                foreach (var loot in ploot)
+                {
+                    string lresult = lootresults.Where(x => x.ID == loot.LootResult).Select(a => a.Description).FirstOrDefault().ToString();
+                    if (!lresult.ToLower().Contains("personal"))
+                        givenlist.Add(new Tuple<DateTime, string>(Convert.ToDateTime(loot.TimeStamp, cultureInfo), loot.Item));
+                }
+            }
+            return givenlist;
+        }
+
+        private List<Tuple<DateTime, string>> GetReceived(PlayerCharacters playchar)
+        {
+            var cultureInfo = new System.Globalization.CultureInfo("en-GB");
+            List<Tuple<DateTime, string>> reclist = new List<Tuple<DateTime, string>>();
+            var chars = playerCharacters.Where(x => x.Owner == playchar.Owner);
+            foreach (var chr in chars)
+            {
+                var ploot = characterloot.Where(x => x.Character == chr.Name);
+                foreach (var loot in ploot)
+                {
+                    string lresult = lootresults.Where(x => x.ID == loot.LootResult).Select(a => a.Description).FirstOrDefault().ToString();
+                    if (!lresult.ToLower().Contains("disenchant")
+                        && !lresult.ToLower().Contains("pass")
+                        && !lresult.ToLower().Contains("awarded")
+                        && !lresult.ToLower().Contains("off")
+                        && !lresult.ToLower().Contains("transmog")
+                        && !lresult.ToLower().Contains("personal"))
+                        reclist.Add(new Tuple<DateTime, string>(Convert.ToDateTime(loot.TimeStamp, cultureInfo), loot.Item));
+                }
+            }
+            return reclist;
+        }
 }

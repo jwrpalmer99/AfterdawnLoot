@@ -45,7 +45,7 @@
                         <td>@raid.RaidName</td>
                         <td @onclick="(() => EditDate(raid))">@Convert.ToDateTime(raid.TimeStamp, cultureInfo).ToString("dd/MM/yyyy")</td>
                         @*<td @onclick="(() => EditRaid(raid))">@raid.IsComplete</td>*@
-                        <td class="mylink" @onclick="(() => EditStarting(raid))" data-toggle="tooltip" title="@String.Join(Environment.NewLine, attendances.Where(a => a.RaidID == raid.ID && a.PresentStart == 1).Select(r => r.CharacterName).OrderBy(x => x))">@GetStartingAttendance(raid)</td>
+                        <td @onclick="(() => EditStarting(raid))" data-toggle="tooltip" title="@String.Join(Environment.NewLine, attendances.Where(a => a.RaidID == raid.ID && a.PresentStart == 1).Select(r => r.CharacterName).OrderBy(x => x))">@GetStartingAttendance(raid)</td>
                         <td @onclick="(() => EditEnding(raid))" data-toggle="tooltip" title="@String.Join(Environment.NewLine, attendances.Where(a => a.RaidID == raid.ID && a.PresentEnd == 1).Select(r => r.CharacterName).OrderBy(x => x))">@GetEndingAttendance(raid)</td>
                         <td>
                             <button type="button" class="Manage Loot"
