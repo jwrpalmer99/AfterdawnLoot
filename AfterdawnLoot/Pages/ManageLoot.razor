@@ -6,8 +6,7 @@
 
 <AuthorizeView>
     <Authorized>
-        <h1>Afterdawn Loot for @Convert.ToDateTime(currentraid.TimeStamp, cultureInfo).ToShortDateString() (@currentraid.RaidName)</h1>
-        <table id="characters">
+        <h1>Afterdawn Loot for @Convert.ToDateTime(currentraid.TimeStamp, cultureInfo).ToString("dd/MM/yyyy")</h1><table id="characters">
             @if (playerCharacters.Any())
             {
                 <tr>
