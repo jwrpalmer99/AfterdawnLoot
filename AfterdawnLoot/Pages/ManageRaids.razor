@@ -31,9 +31,9 @@
                         <th>Loot</th>
                         @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
                         {
-                            <th>Admin</th>
+                        <th>Admin</th>
                         }
-                        </tr>
+                    </tr>
                 </thead>
                 <tbody>
                     @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
@@ -43,7 +43,7 @@
                     <tr>
                         <td>@raid.ID</td>
                         <td>@raid.RaidName</td>
-                        <td>@Convert.ToDateTime(raid.TimeStamp, cultureInfo).ToString("dd/MM/yyyy")</td>
+                        <td @onclick="(() => EditDate(raid))">@Convert.ToDateTime(raid.TimeStamp, cultureInfo).ToString("dd/MM/yyyy")</td>
                         @*<td @onclick="(() => EditRaid(raid))">@raid.IsComplete</td>*@
                         <td class="mylink" @onclick="(() => EditStarting(raid))" data-toggle="tooltip" title="@String.Join(Environment.NewLine, attendances.Where(a => a.RaidID == raid.ID && a.PresentStart == 1).Select(r => r.CharacterName).OrderBy(x => x))">@GetStartingAttendance(raid)</td>
                         <td @onclick="(() => EditEnding(raid))" data-toggle="tooltip" title="@String.Join(Environment.NewLine, attendances.Where(a => a.RaidID == raid.ID && a.PresentEnd == 1).Select(r => r.CharacterName).OrderBy(x => x))">@GetEndingAttendance(raid)</td>
@@ -231,6 +231,38 @@
                 </div>
             </div>
             }
+            @if (ShowDatePopup)
+            {
+                <!-- This is the popup to create or edit a user -->
+            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Change Raid Date</h3>
+                            <!-- Button to close the popup -->
+                            <button type="button" class="close"
+                                    @onclick="CloseDatePopup">
+                                <span aria-hidden="true">X</span>
+                            </button>
+                        </div>
+                        <!-- Edit form for the current user -->
+                        <div class="modal-body">
+                            <input class="form-control" asp-for="DateTime" 
+                                   @bind="newdatetime" />
+
+                            <br /><br />
+                            <!-- Button to save the user -->
+                            <button class="btn btn-primary"
+                                    @onclick="SaveRaidDate">
+                                Save
+                            </button>
+                            <span style="color:red">@strError</span>
+                            <br />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            }
             @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
             {
             <button class="btn btn-primary" @onclick="AddRaid">Add a raid</button>
@@ -261,6 +293,8 @@
         private List<Attendance> attendances;
         private string attendancelist = "";
         private Raids currentraid;
+        private bool ShowDatePopup = false;
+        private DateTime newdatetime;
         //private List<PlayerCharacters> playerCharacters;
 
         protected override async Task OnInitializedAsync()
@@ -284,6 +318,27 @@
             else
                 raid.IsComplete = 1;
         }
+
+        private void EditDate(Raids raid)
+        {
+            currentraid = raid;
+            newdatetime = Convert.ToDateTime(raid.TimeStamp);
+            ShowDatePopup = true;
+        }
+
+        private async void SaveRaidDate()
+        {
+            currentraid.TimeStamp = newdatetime.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
+            await dataservice.UpdateRaidsAsync(currentraid);
+            raids = await dataservice.GetRaidsAsync();
+            ShowDatePopup = false;
+        }
+
+        private void CloseDatePopup()
+        {
+            ShowDatePopup = false;
+        }
+
 
         private void EditStarting(Raids raid)
         {
