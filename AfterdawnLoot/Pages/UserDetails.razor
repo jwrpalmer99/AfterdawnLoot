@@ -1,0 +1,210 @@
+@page "/userdetails"
+@page "/userdetails/{UserID:int}"
+@inject UserManager<IdentityUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject AfterdawnDataServices dataservice
+
+@using Microsoft.EntityFrameworkCore
+
+<AuthorizeView>
+    <Authorized>
+        <h3>Details for @playerCharacters.Where(x => x.UserID == UserID).Select(z => z.Name).FirstOrDefault()</h3>
+        @widget
+
+    </Authorized>
+    <NotAuthorized>
+        <p>You are not authorized to view this page</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code
+{
+        [Parameter]
+        public int UserID { get; set; }
+        string ADMINISTRATION_ROLE = "Administrators";
+        List<PlayerCharacters> playerCharacters = new List<PlayerCharacters>();
+        List<Attendance> Attendances = new List<Attendance> { };
+        static List<Raids> raids = new List<Raids> { };
+        PlayerCharacters currentplayer;
+
+        [CascadingParameter]
+        private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    private IEnumerable<Claim> _claims = Enumerable.Empty<Claim>();
+    private List<LootResults> lootresults;
+    private List<CharacterLoot> characterloot;
+
+    RenderFragment widget = __builder =>
+    {
+    <BlazorFullCalendar.FullCalendar settings="@GetSettings()"></BlazorFullCalendar.FullCalendar>
+    };
+
+        System.Security.Claims.ClaimsPrincipal CurrentUser;
+        protected override async Task OnInitializedAsync()
+        {
+            CurrentUser = (await authenticationStateTask).User;
+            playerCharacters = await dataservice.GetPlayerCharactersAsync();
+            playerCharacters = playerCharacters.OrderBy(x => x.Name).ToList();
+            lootresults = await dataservice.GetLootResultsAsync();
+
+            Attendances = await dataservice.GetAttendanceAsync();
+            raids = await dataservice.GetRaidsAsync();
+            characterloot = await dataservice.GetCharacterLootAsync();
+
+        }
+
+        private static CalendarSettings GetSettings()
+        {
+            return new CalendarSettings()
+            {
+                plugins = new[] { CalendarPluginTypes.DayGrid },
+                defaultView = "dayGridMonth",
+                timeZone = "UTC",
+                events = GetEvents()
+            };
+    }
+
+    private static string ParseLootName(string lootstring)
+    {
+        var elem = lootstring.Split('"');
+        if (elem == null || elem.Length < 4) return "";
+        var name = elem[3];
+
+        return name;
+    }
+
+    private static CalendarDateItem[] GetEvents()
+    {
+        var eventList = new CalendarDateItem[Globals.global_raids.Count() * 10];
+
+        int i = 0;
+        foreach (var raid in Globals.global_raids)
+        {
+
+            //check attendance
+            bool isStart = false;
+            bool isEnd = false;
+            foreach (var p in Globals.player_char.Where(p => p.UserID == Globals.UserID))
+            {
+                var att = Globals.global_attendance.Where(r => r.RaidID == raid.ID && r.CharacterName == p.Name);
+                if (att.Count() > 0)
+                {
+                    if (att.First().PresentStart == 1) isStart = true;
+                    if (att.First().PresentEnd == 1) isEnd = true;
+                }
+            }
+
+            var cditem = new CalendarDateItem();
+            cditem.allDay = true;
+            cditem.startTime = Convert.ToDateTime(raid.TimeStamp);
+            cditem.endTime = Convert.ToDateTime(raid.TimeStamp) + new TimeSpan(1, 0, 0);
+            cditem.start = cditem.startTime;
+            cditem.end = cditem.endTime;
+            cditem.title = raid.RaidName;
+            if (isEnd && isStart)
+                cditem.backgroundColor = "#77a441";
+            else if (isStart || isEnd)
+                cditem.backgroundColor = "#FFA500";
+            else
+                cditem.backgroundColor = "#c3666f";
+            cditem.textColor = "#000000";
+            cditem.rendering = "background";
+            cditem.url = "./ManageLoot/" + raid.ID.ToString();
+            eventList[i] = (cditem);
+            i++;
+
+            var cditem2 = new CalendarDateItem();
+            cditem2.allDay = true;
+            cditem2.startTime = Convert.ToDateTime(raid.TimeStamp);
+            cditem2.endTime = Convert.ToDateTime(raid.TimeStamp) + new TimeSpan(1, 0, 0);
+            cditem2.start = cditem.startTime;
+            cditem2.end = cditem.endTime;
+            cditem2.title = " " +raid.RaidName;
+
+            if (isEnd && isStart)
+                cditem2.backgroundColor = "#77a441";
+            else if (isStart || isEnd)
+                cditem2.backgroundColor = "#FFA500";
+            else
+                cditem2.backgroundColor = "#c3666f";
+            cditem2.textColor = "#000000";
+            cditem2.url = "./ManageLoot/" + raid.ID.ToString();
+
+            eventList[i] = (cditem2);
+            i++;
+
+            //now get the loot
+            List<string> given = new List<string> { };
+            List<string> taken = new List<string> { };
+            var cultureInfo = new System.Globalization.CultureInfo("en-GB");
+            foreach (var chr in Globals.player_char.Where(p => p.UserID == Globals.UserID))
+            {
+                var ploot = Globals.global_loot.Where(x => x.SourceCharacter == chr.Name);
+                foreach (var loot in ploot)
+                {
+                    string lresult = Globals.global_lootresults.Where(x => x.ID == loot.LootResult).Select(a => a.Description).FirstOrDefault().ToString();
+                    if (!lresult.ToLower().Contains("personal"))
+                    {
+                        given.Add(ParseLootName(loot.Item));
+                    }
+                }
+
+                ploot = Globals.global_loot.Where(x => x.Character == chr.Name);
+
+                foreach (var loot in ploot)
+                {
+                    string lresult = Globals.global_lootresults.Where(x => x.ID == loot.LootResult).Select(a => a.Description).FirstOrDefault().ToString();
+                    if (!lresult.ToLower().Contains("disenchant")
+                        && !lresult.ToLower().Contains("pass")
+                        && !lresult.ToLower().Contains("awarded")
+                        && !lresult.ToLower().Contains("off")
+                        && !lresult.ToLower().Contains("transmog")
+                        && !lresult.ToLower().Contains("personal"))
+                    {
+                        taken.Add(ParseLootName(loot.Item));
+
+                    }
+                }
+            }
+            if (given.Count > 0)
+            {
+                //add given items
+                var cditem3 = new CalendarDateItem();
+                cditem3.allDay = true;
+                cditem3.startTime = Convert.ToDateTime(raid.TimeStamp) + new TimeSpan(1, 0, 0);
+                cditem3.endTime = Convert.ToDateTime(raid.TimeStamp) + new TimeSpan(2, 0, 0);
+                cditem3.start = cditem3.startTime;
+                cditem3.end = cditem3.endTime;
+                cditem3.title = string.Join('\n', given);
+                cditem3.backgroundColor = "#77a441";
+                cditem3.rendering = "";
+
+                eventList[i] = (cditem3);
+                i++;
+            }
+
+            if (taken.Count > 0)
+            {
+                //add received items
+                var cditem3 = new CalendarDateItem();
+                cditem3.allDay = true;
+                cditem3.startTime = Convert.ToDateTime(raid.TimeStamp) + new TimeSpan(2, 0, 0);
+                cditem3.endTime = Convert.ToDateTime(raid.TimeStamp) + new TimeSpan(3, 0, 0);
+                cditem3.start = cditem3.startTime;
+                cditem3.end = cditem3.endTime;
+                cditem3.title = string.Join('\n', taken);
+                cditem3.backgroundColor = "#c3666f";
+                cditem3.rendering = "";
+
+                eventList[i] = (cditem3);
+                i++;
+            }
+        }
+        Array.Resize(ref eventList, i);
+        Array.Reverse(eventList);
+        return eventList;
+
+    }
+    }
+    

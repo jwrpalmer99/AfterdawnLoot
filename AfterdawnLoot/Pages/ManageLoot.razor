@@ -1,0 +1,355 @@
+@page "/manageloot"
+@page "/manageloot/{RaidID:int}"
+@using AfterdawnLoot.Data
+@inject AfterdawnDataServices dataservice
+
+
+<AuthorizeView>
+    <Authorized>
+        <h1>Afterdawn Loot for @Convert.ToDateTime(currentraid.TimeStamp, cultureInfo).ToShortDateString() (@currentraid.RaidName)</h1>
+        <table id="characters">
+            @if (playerCharacters.Any())
+            {
+                <tr>
+                    <th>Character</th>
+                    <th>Item</th>
+                    <th>Loot Result</th>
+                    <th>Source Character</th>
+                </tr>
+                @foreach (var loot in raidloot)
+                {
+        <tr class="@loot.Class">
+            @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
+            {
+                <td @onclick="(() => ChangeCharacter(loot))">@loot.Character</td>
+            }
+            else
+            {
+                <td>@loot.Character</td>
+            }
+
+            <td><a href="@ParseLootUrl(loot.Item)" target="_blank">@ParseLootName(loot.Item)</a></td>
+            @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
+            {
+                <td @onclick="(() => ChangeResult(loot))">@GetLootResultDesc(loot.LootResult)</td>
+            }
+            else
+            {
+                <td>@GetLootResultDesc(loot.LootResult)</td>
+            }
+
+            <td>@loot.SourceCharacter</td>
+        </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="6"><strong>No players in the system yet</strong></td></tr>
+            }
+        </table>
+        @if (ShowPopup)
+        {
+            <!-- This is the popup to create or edit a user -->
+            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Add Loot</h3>
+                            <!-- Button to close the popup -->
+                            <button type="button" class="close"
+                                    @onclick="ClosePopup">
+                                <span aria-hidden="true">X</span>
+                            </button>
+                        </div>
+                        <!-- Edit form for the current user -->
+                        <div class="modal-body">
+
+                            <textarea class="form-control" rows="25" cols="80"
+                                      placeholder="Loot Report Input"
+                                      @bind="lootinput" />
+
+                            <br /><br />
+                            <!-- Button to save the user -->
+                            <button class="btn btn-primary"
+                                    @onclick="SaveLoot">
+                                Save
+                            </button>
+                            <span style="color:red">@strError</span>
+                            <br />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        @if (ShowChangeCharacter)
+        {
+            <!-- This is the popup to create or edit a user -->
+            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Change Loot Destination</h3>
+                            <!-- Button to close the popup -->
+                            <button type="button" class="close"
+                                    @onclick="CloseChangeCharacter">
+                                <span aria-hidden="true">X</span>
+                            </button>
+                        </div>
+                        <!-- Edit form for the current user -->
+                        <div class="modal-body">
+
+
+                            <select class="form-control"
+                                    placeholder="Select Loot Destination"
+                                    @bind="newLooter">
+                                @foreach (var p in playerCharacters.OrderBy(x => x.Name))
+                                {
+                                    <option>@p.Name</option>
+                                }
+                            </select>
+
+                            <br /><br />
+                            <!-- Button to save the user -->
+                            <button class="btn btn-primary"
+                                    @onclick="SaveChangeCharacter">
+                                Save
+                            </button>
+                            <span style="color:red">@strError</span>
+                            <br />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+            @if (ShowChangeResult)
+            {
+                <!-- This is the popup to create or edit a user -->
+                <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3 class="modal-title">Change Loot Result</h3>
+                                <!-- Button to close the popup -->
+                                <button type="button" class="close"
+                                        @onclick="CloseChangeResult">
+                                    <span aria-hidden="true">X</span>
+                                </button>
+                            </div>
+                            <!-- Edit form for the current user -->
+                            <div class="modal-body">
+
+
+                                <select class="form-control"
+                                        placeholder="Select Loot Result"
+                                        @bind="newResult">
+                                    @foreach (var p in lootresults.OrderBy(x => x.Description))
+                                    {
+                                        <option>@p.Description</option>
+                                    }
+                                </select>
+
+                                <br /><br />
+                                <!-- Button to save the user -->
+                                <button class="btn btn-primary"
+                                        @onclick="SaveChangeResult">
+                                    Save
+                                </button>
+                                <span style="color:red">@strError</span>
+                                <br />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            <br />
+            @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
+            {
+                <button class="btn btn-primary" @onclick="AddLoot">Paste Loot Report</button>
+            }
+            <br />
+        </Authorized>
+    <NotAuthorized>
+        <p>You are not authorized to view this page</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code
+{
+    [Parameter]
+    public int RaidID { get; set; }
+
+    string ADMINISTRATION_ROLE = "Administrators";
+
+    System.Security.Claims.ClaimsPrincipal CurrentUser;
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    System.Globalization.CultureInfo cultureInfo = new System.Globalization.CultureInfo("en-GB");
+    private IEnumerable<Claim> _claims = Enumerable.Empty<Claim>();
+    bool ShowPopup = false;
+    bool ShowChangeCharacter = false;
+    bool ShowChangeResult = false;
+    string newResult;
+    Raids newraid = new Raids();
+    string strError = "";
+    private string lootinput = "";
+    private Raids currentraid;
+    private string newLooter;
+    private CharacterLoot currentloot;
+    private List<PlayerCharacters> playerCharacters;
+    private List<CharacterLoot> raidloot;
+    private List<LootResults> lootresults;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CurrentUser = (await authenticationStateTask).User;
+        playerCharacters = await dataservice.GetPlayerCharactersAsync();
+        raidloot = await dataservice.GetCharacterLootAsync(RaidID);
+        currentraid = await dataservice.GetRaidByID(RaidID);
+        lootresults = await dataservice.GetLootResultsAsync();
+    }
+
+    private string GetLootResultDesc(long? lootresultID=0)
+    {
+        return lootresults.Where(x => x.ID == lootresultID).Select(a => a.Description).FirstOrDefault();
+    }
+
+    private void EditLoot(CharacterLoot loot)
+    {
+
+    }
+
+    private void ChangeCharacter(CharacterLoot loot)
+    {
+        currentloot = loot;
+        newLooter = playerCharacters.OrderBy(x => x.Name).First().Name;
+        ShowChangeCharacter = true;
+    }
+
+    private async void SaveChangeCharacter()
+    {
+        currentloot.Character = newLooter;
+        await dataservice.UpdateCharacterLootAsync(currentloot);
+        raidloot = await dataservice.GetCharacterLootAsync(RaidID);
+        CloseChangeCharacter();
+    }
+
+    private void CloseChangeCharacter()
+    {
+        ShowChangeCharacter = false;
+    }
+
+    private void ChangeResult(CharacterLoot loot)
+    {
+        currentloot = loot;
+        newResult = lootresults.Where(x => x.ID == loot.LootResult).Select(z => z.Description).FirstOrDefault();
+        ShowChangeResult= true;
+    }
+
+    private async void SaveChangeResult()
+    {
+        currentloot.LootResult = lootresults.Where(x => x.Description == newResult).Select(z => z.ID).FirstOrDefault();
+        await dataservice.UpdateCharacterLootAsync(currentloot);
+        raidloot = await dataservice.GetCharacterLootAsync(RaidID);
+        CloseChangeResult();
+    }
+
+    private void CloseChangeResult()
+    {
+        ShowChangeResult = false;
+    }
+
+    private void AddLoot()
+    {
+        ShowPopup = true;
+    }
+
+    private async void SaveLoot()
+    {
+        //clear previous loot
+        foreach(var l in raidloot)
+        {
+            dataservice.DeleteCharacterLoot(l);
+        }
+
+        var lines = lootinput.Replace("\r\n","\n").Split('\n');
+        for (int l = 1; l < lines.Length; l++)
+        {
+            var line = lines[l];
+            if (line != "")
+            {
+                var ele = line.Split('\t');
+
+                string player = ele[0].Split('-')[0];
+                string date = ele[1];
+                string item = ele[3];
+                string response = ele[6];
+                string rolltype = ele[15];
+                string owner = ele[19].Split('-')[0];
+                string _class = ele[8];
+
+                CharacterLoot newloot = new CharacterLoot();
+                newloot.Character = player;
+                newloot.SourceCharacter = owner;
+                newloot.Item = item;
+                newloot.LootResult = ResultLookup(response);
+                newloot.TimeStamp = date;
+                newloot.RaidID = RaidID;
+                newloot.Class = _class;
+                await dataservice.AddCharacterLootAsync(newloot);
+
+                var players = await dataservice.GetPlayersAsync();
+                //add player characters if needed
+                if (players.Where(x => x.Name == player).Count() == 0)
+                {
+                    Players pnew = new Players();
+                    pnew.Name = player;
+                    await dataservice.AddPlayersAsync(pnew);
+
+
+                    players = await dataservice.GetPlayersAsync();
+
+
+                    Characters cnew = new Characters();
+                    cnew.Name = player;
+                    cnew.UserID = players.Where(x => x.Name == player).Select(y => y.UserID).FirstOrDefault();
+                    cnew.IsMain = 1;
+                    cnew.Class = _class.FirstCharToUpper();
+                    await dataservice.AddCharactersAsync(cnew);
+                }
+            }
+        }
+        raidloot = await dataservice.GetCharacterLootAsync(RaidID);
+        ShowPopup = false;
+    }
+
+    private long ResultLookup(string response)
+    {
+        return lootresults.Where(c => c.Description == response).Select(x => x.ID).FirstOrDefault();
+    }
+
+    private string ParseLootUrl(string lootstring)
+    {
+        var elem = lootstring.Split('"');
+        if (elem == null || elem.Length < 4) return "";
+        var url = elem[1];
+
+        return url;
+    }
+
+    private string ParseLootName(string lootstring)
+    {
+        var elem = lootstring.Split('"');
+        if (elem == null || elem.Length < 4) return "";
+        var name = elem[3];
+
+        return name;
+    }
+
+
+    private void ClosePopup()
+    {
+        ShowPopup = false;
+    }
+}

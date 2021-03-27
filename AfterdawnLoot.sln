@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31112.23
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AfterdawnLoot", "AfterdawnLoot\AfterdawnLoot.csproj", "{9C4CFFA3-40DD-4CB3-8F39-E2949640DB3F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{218ED869-D893-4518-9FC1-5A71A6A2D753} = {218ED869-D893-4518-9FC1-5A71A6A2D753}
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorFullCalendar", "BlazorFullCalendar\BlazorFullCalendar.csproj", "{218ED869-D893-4518-9FC1-5A71A6A2D753}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9C4CFFA3-40DD-4CB3-8F39-E2949640DB3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C4CFFA3-40DD-4CB3-8F39-E2949640DB3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C4CFFA3-40DD-4CB3-8F39-E2949640DB3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C4CFFA3-40DD-4CB3-8F39-E2949640DB3F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{218ED869-D893-4518-9FC1-5A71A6A2D753}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{218ED869-D893-4518-9FC1-5A71A6A2D753}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{218ED869-D893-4518-9FC1-5A71A6A2D753}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{218ED869-D893-4518-9FC1-5A71A6A2D753}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0A07C0F3-146A-4349-98B7-5B53387C70BB}
+	EndGlobalSection
+EndGlobal
