@@ -20,15 +20,15 @@
 
                 <tr>
                     <th>Details</th>
-                    <th @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Owner).ToList())">Owner</th>
-                    <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.Score).ToList())">Current Score</th>
-                    <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalReceived).ToList())">Loot Received</th>
-                    <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalGiven).ToList())">Loot Given</th>
-                    <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalAttendance).ToList())">Total Att</th>
-                    <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.WeeklyAttendance).ToList())">Weekly Att</th>
+                    <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Owner).ToList())">Owner</th>
+                    <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.Score).ToList())">Current Score</th>
+                    <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalReceived).ToList())">Loot Received</th>
+                    <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalGiven).ToList())">Loot Given</th>
+                    <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalAttendance).ToList())">Total Att</th>
+                    <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.WeeklyAttendance).ToList())">Weekly Att</th>
                     <th>Adjustment</th>
-                    <th @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Name).ToList())">Character</th>
-                    <th @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Class).ToList())">Class</th>
+                    <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Name).ToList())">Character</th>
+                    <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Class).ToList())">Class</th>
                     <th>Main</th>
                     <th>Social</th>
                     <th>Comment</th>
@@ -38,10 +38,10 @@
                     if ((playchar.IsMain == 1 || showAlts) && (filter == "" || filter.Contains(playchar.Class)))
                     {
         <tr class="@playchar.Class">
-            <td @onclick="(() => ExaminePlayer(playchar))"><img src="magni.png" height="24" width="24"/></td>
+            <td class="pointer" @onclick="(() => ExaminePlayer(playchar))"><img src="magni.png" height="24" width="24"/></td>
             @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
             {
-                <td @onclick="(() => ChangeOwner(playchar))">@playchar.Owner</td>
+                <td class="pointer" @onclick="(() => ChangeOwner(playchar))">@playchar.Owner</td>
             }
             else
             {
@@ -56,16 +56,16 @@
             <td>@playchar.Name</td>
             @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
             {
-                <td @onclick="(() => ChangeClass(playchar))">@playchar.Class</td>
+                <td class="pointer" @onclick="(() => ChangeClass(playchar))">@playchar.Class</td>
             }
             else
             {
-                <td>@playchar.Class</td>
+                <td >@playchar.Class</td>
             }
             <td>@playchar.IsMain</td>
             @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
             {
-                <td @onclick="(() => ChangeSocial(playchar))">@playchar.IsSocial</td>
+                <td class="pointer" @onclick="(() => ChangeSocial(playchar))">@playchar.IsSocial</td>
             }
             else
             {
@@ -73,7 +73,7 @@
             }
             @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
             {
-                <td @onclick="(() => ChangeComment(playchar))">@playchar.Comment</td>
+                <td class="pointer" @onclick="(() => ChangeComment(playchar))">@playchar.Comment</td>
             }
             else
             {
