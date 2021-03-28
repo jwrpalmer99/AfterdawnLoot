@@ -11,7 +11,7 @@
     <Authorized>
 
         <div class="container">
-            <div class="row"><h3>Details for @playerCharacters.Where(x => x.UserID == UserID).Select(z => z.Name).FirstOrDefault()</h3></div>
+            <div class="row"><h3>Details for @Globals.player_char.Where(x => x.UserID == UserID).Select(z => z.Name).FirstOrDefault()</h3></div>
 
             <div class="row" height="50%">
                 @if (widget == null)
@@ -54,7 +54,7 @@
     System.Security.Claims.ClaimsPrincipal CurrentUser;
     protected override async Task OnInitializedAsync()
     {
-       
+        CurrentUser = (await authenticationStateTask).User;      
         Task.Run(LoadData);
     }
 
@@ -62,8 +62,8 @@
     {
         widget = __builder =>
         {
-            <BlazorFullCalendar.FullCalendar settings="@GetSettings()"></BlazorFullCalendar.FullCalendar>
-        };
+        <BlazorFullCalendar.FullCalendar settings="@GetSettings()"></BlazorFullCalendar.FullCalendar>
+       };
         this.InvokeAsync(() => StateHasChanged());
     }
 
