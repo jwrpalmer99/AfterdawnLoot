@@ -11,6 +11,9 @@ a, .btn-link {
 a:hover {
     color: orange;
 }
+.btn:hover {
+    color: orange;
+}
 
 .btn-primary {
     color: #fff;
@@ -141,3 +144,14 @@ a:hover {
     background-color: chocolate;
 }
 
+.n-resize {
+    cursor: n-resize;
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+.help {
+    cursor: help;
+}
