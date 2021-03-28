@@ -10,10 +10,10 @@
             @if (playerCharacters.Any())
             {
                 <tr>
-                    <th>Character</th>
-                    <th>Item</th>
-                    <th>Loot Result</th>
-                    <th>Source Character</th>
+                    <th class="pointer" @onclick="(() => raidloot = raidloot.OrderBy(x=> x.Character).ToList())">Character</th>
+                    <th class="pointer" @onclick="(() => raidloot = raidloot.OrderBy(x=> x.Item).ToList())">Item</th>
+                    <th class="pointer" @onclick="(() => raidloot = raidloot.OrderBy(x=> x.LootResult).ToList())">Loot Result</th>
+                    <th class="pointer" @onclick="(() => raidloot = raidloot.OrderBy(x=> x.SourceCharacter).ToList())">Source Character</th>
                 </tr>
                 @foreach (var loot in raidloot)
                 {
@@ -27,7 +27,7 @@
                 <td>@loot.Character</td>
             }
 
-            <td><a href="@ParseLootUrl(loot.Item)" target="_blank">@ParseLootName(loot.Item)</a></td>
+            <td><a style="color:black" href="@ParseLootUrl(loot.Item)" target="_blank">@ParseLootName(loot.Item)</a></td>
             @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
             {
                 <td class="pointer" @onclick="(() => ChangeResult(loot))">@GetLootResultDesc(loot.LootResult)</td>
