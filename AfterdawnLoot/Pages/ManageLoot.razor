@@ -20,7 +20,7 @@
         <tr class="@loot.Class">
             @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
             {
-                <td @onclick="(() => ChangeCharacter(loot))">@loot.Character</td>
+                <td class="pointer" @onclick="(() => ChangeCharacter(loot))">@loot.Character</td>
             }
             else
             {
@@ -30,7 +30,7 @@
             <td><a href="@ParseLootUrl(loot.Item)" target="_blank">@ParseLootName(loot.Item)</a></td>
             @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
             {
-                <td @onclick="(() => ChangeResult(loot))">@GetLootResultDesc(loot.LootResult)</td>
+                <td class="pointer" @onclick="(() => ChangeResult(loot))">@GetLootResultDesc(loot.LootResult)</td>
             }
             else
             {
