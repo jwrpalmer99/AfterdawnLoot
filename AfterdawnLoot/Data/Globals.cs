@@ -10,6 +10,7 @@ public class Globals
     public static List<PlayerCharacters> player_char;
     public static long UserID;
     public static List<LootResults> global_lootresults;
+    public static List<PointsAdjustment> global_pointadjustments;
 
     public static List<string> classes = new List<string> { "DeathKnight", "DemonHunter", "Druid", "Hunter", "Mage", "Monk", "Paladin", "Priest", "Rogue", "Shaman", "Warlock", "Warrior" };
 }
