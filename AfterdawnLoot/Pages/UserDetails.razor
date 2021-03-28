@@ -77,15 +77,17 @@
     private static CalendarDateItem[] GetEvents()
     {
         var eventList = new CalendarDateItem[Globals.global_raids.Count() * 10];
+        var player_chars = Globals.player_char.Where(p => p.UserID == Globals.UserID);
+
 
         int i = 0;
         foreach (var raid in Globals.global_raids)
         {
-
+            DateTime raidtime = Convert.ToDateTime(raid.TimeStamp);
             //check attendance
             bool isStart = false;
             bool isEnd = false;
-            foreach (var p in Globals.player_char.Where(p => p.UserID == Globals.UserID))
+            foreach (var p in player_chars)
             {
                 var att = Globals.global_attendance.Where(r => r.RaidID == raid.ID && r.CharacterName == p.Name);
                 if (att.Count() > 0)
@@ -97,8 +99,8 @@
 
             var cditem = new CalendarDateItem();
             cditem.allDay = true;
-            cditem.startTime = Convert.ToDateTime(raid.TimeStamp);
-            cditem.endTime = Convert.ToDateTime(raid.TimeStamp) + new TimeSpan(1, 0, 0);
+            cditem.startTime = raidtime;
+            cditem.endTime = raidtime + new TimeSpan(0, 0, 1);
             cditem.start = cditem.startTime;
             cditem.end = cditem.endTime;
             cditem.title = raid.RaidName;
@@ -116,8 +118,8 @@
 
             var cditem2 = new CalendarDateItem();
             cditem2.allDay = true;
-            cditem2.startTime = Convert.ToDateTime(raid.TimeStamp);
-            cditem2.endTime = Convert.ToDateTime(raid.TimeStamp) + new TimeSpan(1, 0, 0);
+            cditem2.startTime = raidtime;
+            cditem2.endTime = raidtime + new TimeSpan(0, 0, 1);
             cditem2.start = cditem.startTime;
             cditem2.end = cditem.endTime;
             cditem2.title = " " +raid.RaidName;
@@ -138,7 +140,7 @@
             List<string> given = new List<string> { };
             List<string> taken = new List<string> { };
             var cultureInfo = new System.Globalization.CultureInfo("en-GB");
-            foreach (var chr in Globals.player_char.Where(p => p.UserID == Globals.UserID))
+            foreach (var chr in player_chars)
             {
                 var ploot = Globals.global_loot.Where(x => x.SourceCharacter == chr.Name);
                 foreach (var loot in ploot)
@@ -172,8 +174,8 @@
                 //add given items
                 var cditem3 = new CalendarDateItem();
                 cditem3.allDay = true;
-                cditem3.startTime = Convert.ToDateTime(raid.TimeStamp) + new TimeSpan(1, 0, 0);
-                cditem3.endTime = Convert.ToDateTime(raid.TimeStamp) + new TimeSpan(2, 0, 0);
+                cditem3.startTime = raidtime + new TimeSpan(0, 0, 1);
+                cditem3.endTime = raidtime + new TimeSpan(0, 0, 2);
                 cditem3.start = cditem3.startTime;
                 cditem3.end = cditem3.endTime;
                 cditem3.title = string.Join('\n', given);
@@ -189,8 +191,8 @@
                 //add received items
                 var cditem3 = new CalendarDateItem();
                 cditem3.allDay = true;
-                cditem3.startTime = Convert.ToDateTime(raid.TimeStamp) + new TimeSpan(2, 0, 0);
-                cditem3.endTime = Convert.ToDateTime(raid.TimeStamp) + new TimeSpan(3, 0, 0);
+                cditem3.startTime = raidtime + new TimeSpan(0, 0, 2);
+                cditem3.endTime = raidtime + new TimeSpan(0, 0, 3);
                 cditem3.start = cditem3.startTime;
                 cditem3.end = cditem3.endTime;
                 cditem3.title = string.Join('\n', taken);
