@@ -9,8 +9,15 @@
 
 <AuthorizeView>
     <Authorized>
-        <h3>Details for @playerCharacters.Where(x => x.UserID == UserID).Select(z => z.Name).FirstOrDefault()</h3>
-        @widget
+        
+        <div class="container">
+            <div class="row"><h3>Details for @playerCharacters.Where(x => x.UserID == UserID).Select(z => z.Name).FirstOrDefault()</h3></div>
+            
+            <div class="row">
+                @widget
+            </div>
+        </div>
+        
 
     </Authorized>
     <NotAuthorized>
