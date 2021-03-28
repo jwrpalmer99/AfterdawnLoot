@@ -1,6 +1,7 @@
 using AfterdawnLoot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public class PlayerCharacterScores : PlayerCharacters
 {
@@ -23,4 +24,10 @@ public class PlayerCharacterScores : PlayerCharacters
         this.UserID = p.UserID;
         this.Comment = p.Comment;
     }
+
+    public long AdjustmentTotal
+    {
+        get { if (Adjustments == null) return 0; return Adjustments.Sum(a => a.Adjustment); }
+    }
+
 }

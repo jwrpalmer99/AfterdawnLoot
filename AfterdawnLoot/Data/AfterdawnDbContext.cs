@@ -28,6 +28,9 @@ namespace AfterdawnLoot.Data
             modelBuilder.Entity<CharacterLoot>()
                 .Property(e => e.ID)
                 .ValueGeneratedOnAdd();
+
+            modelBuilder.Entity<PointsAdjustment>()
+                .HasKey(c => new { c.CharacterName, c.TimeStamp });
         }
 
         public DbSet<Players> Players { get; set; }
@@ -40,5 +43,7 @@ namespace AfterdawnLoot.Data
 
         public DbSet<LootResults> LootResults { get; set; }
         public DbSet<CharacterLoot> CharacterLoot { get; set; }
+
+        public DbSet<PointsAdjustment> PointsAdjustment { get; set; }
     }
 }

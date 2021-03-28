@@ -47,29 +47,29 @@
     <BlazorFullCalendar.FullCalendar settings="@GetSettings()"></BlazorFullCalendar.FullCalendar>
     };
 
-        System.Security.Claims.ClaimsPrincipal CurrentUser;
-        protected override async Task OnInitializedAsync()
+    System.Security.Claims.ClaimsPrincipal CurrentUser;
+    protected override async Task OnInitializedAsync()
+    {
+        CurrentUser = (await authenticationStateTask).User;
+        playerCharacters = await dataservice.GetPlayerCharactersAsync();
+        playerCharacters = playerCharacters.OrderBy(x => x.Name).ToList();
+        lootresults = await dataservice.GetLootResultsAsync();
+
+        Attendances = await dataservice.GetAttendanceAsync();
+        raids = await dataservice.GetRaidsAsync();
+        characterloot = await dataservice.GetCharacterLootAsync();
+
+    }
+
+    private static CalendarSettings GetSettings()
+    {
+        return new CalendarSettings()
         {
-            CurrentUser = (await authenticationStateTask).User;
-            playerCharacters = await dataservice.GetPlayerCharactersAsync();
-            playerCharacters = playerCharacters.OrderBy(x => x.Name).ToList();
-            lootresults = await dataservice.GetLootResultsAsync();
-
-            Attendances = await dataservice.GetAttendanceAsync();
-            raids = await dataservice.GetRaidsAsync();
-            characterloot = await dataservice.GetCharacterLootAsync();
-
-        }
-
-        private static CalendarSettings GetSettings()
-        {
-            return new CalendarSettings()
-            {
-                plugins = new[] { CalendarPluginTypes.DayGrid },
-                defaultView = "dayGridMonth",
-                timeZone = "UTC",
-                events = GetEvents()
-            };
+            plugins = new[] { CalendarPluginTypes.DayGrid },
+            defaultView = "dayGridMonth",
+            timeZone = "UTC",
+            events = GetEvents()
+        };
     }
 
     private static string ParseLootName(string lootstring)
@@ -130,6 +130,7 @@
             cditem2.start = cditem.startTime;
             cditem2.end = cditem.endTime;
             cditem2.title = " " +raid.RaidName;
+            cditem2.borderColor = "Orange";
 
             if (isEnd && isStart)
                 cditem2.backgroundColor = "#77a441";
@@ -149,6 +150,33 @@
             var cultureInfo = new System.Globalization.CultureInfo("en-GB");
             foreach (var chr in player_chars)
             {
+
+                //look for point adjustments
+                var adjusts = Globals.global_pointadjustments.Where(p => p.CharacterName == chr.Name).ToList();
+                foreach (var adj in adjusts)
+                {
+                    var cditemadj = new CalendarDateItem();
+                    cditemadj.allDay = true;
+                    cditemadj.startTime = Convert.ToDateTime(adj.TimeStamp);
+                    cditemadj.endTime = Convert.ToDateTime(adj.TimeStamp) + new TimeSpan(0, 0, 1);
+                    cditemadj.start = cditemadj.startTime;
+                    cditemadj.end = cditemadj.endTime;
+                    cditemadj.title = adj.Adjustment + " - " + adj.Reason;
+                    cditemadj.borderColor = "Purple";
+
+                    if (adj.Adjustment > 0)
+                        cditemadj.title = "+" + cditemadj.title;
+
+                    if (adj.Adjustment > 0)
+                        cditemadj.backgroundColor = "#77a441";
+                    else
+                        cditemadj.backgroundColor = "#FFA500";
+                    cditemadj.textColor = "#000000";
+
+                    eventList[i] = (cditemadj);
+                    i++;
+                }
+
                 var ploot = Globals.global_loot.Where(x => x.SourceCharacter == chr.Name);
                 foreach (var loot in ploot)
                 {

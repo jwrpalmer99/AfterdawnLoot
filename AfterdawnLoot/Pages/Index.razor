@@ -21,11 +21,12 @@
                 <tr>
                     <th>Details</th>
                     <th @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Owner).ToList())">Owner</th>
-                    <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.Score).ToList())">Loot Score</th>
+                    <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.Score).ToList())">Current Score</th>
                     <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalReceived).ToList())">Loot Received</th>
                     <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalGiven).ToList())">Loot Given</th>
                     <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalAttendance).ToList())">Total Att</th>
                     <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.WeeklyAttendance).ToList())">Weekly Att</th>
+                    <th>Adjustment</th>
                     <th @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Name).ToList())">Character</th>
                     <th @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Class).ToList())">Class</th>
                     <th>Main</th>
@@ -51,6 +52,7 @@
             <td>@playchar.TotalGiven.ToString()</td>
             <td>@playchar.TotalAttendance.ToString()</td>
             <td>@playchar.WeeklyAttendance.ToString()</td>
+            <td>@playchar.AdjustmentTotal.ToString()</td>
             <td>@playchar.Name</td>
             @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
             {
@@ -226,6 +228,7 @@
     private List<LootResults> lootresults;
     private List<PlayerCharacterScores> playerscores = new List<PlayerCharacterScores> { };
     private List<CharacterLoot> characterloot;
+    private List<PointsAdjustment> pointadjustments;
     private string filter = "";
 
     System.Security.Claims.ClaimsPrincipal CurrentUser;
@@ -239,11 +242,13 @@
         players = await dataservice.GetPlayersAsync();
         raids = await dataservice.GetRaidsAsync();
         characterloot = await dataservice.GetCharacterLootAsync();
+        pointadjustments = await dataservice.GetPointsAdjustmentAsync();
         Globals.global_raids = raids;
         Globals.global_loot = characterloot;
         Globals.global_attendance = Attendances;
         Globals.player_char = playerCharacters;
         Globals.global_lootresults = lootresults;
+        Globals.global_pointadjustments = pointadjustments;
         updateplayerscores();
     }
 
@@ -279,13 +284,14 @@
         foreach (var p in playerCharacters)
         {
             PlayerCharacterScores newscore = new PlayerCharacterScores(p);
+            newscore.Adjustments = GetAdjustments(p);
             newscore.TotalAttendance = GetAttendance(p);
             newscore.WeeklyAttendance = GetThisWeekAttendance(p);
             newscore.LootReceived = GetReceived(p);
             newscore.LootGiven = GetGiven(p);
             newscore.TotalGiven = newscore.LootGiven.Count() * 3.0M;
             newscore.TotalReceived = newscore.LootReceived.Count() * 6.0M;
-            newscore.Score = newscore.TotalGiven - newscore.TotalReceived + newscore.TotalAttendance;
+            newscore.Score = newscore.Adjustments.Sum(a => a.Adjustment) + newscore.TotalGiven - newscore.TotalReceived + newscore.TotalAttendance;
             playerscores.Add(newscore);
         }
         playerscores = playerscores.OrderByDescending(x => x.Score).ToList();
@@ -385,7 +391,18 @@
         ShowCommentPopup = false;
     }
 
-
+    private List<PointsAdjustment> GetAdjustments(PlayerCharacters playchar)
+    {
+        List<PointsAdjustment> adj = new List<PointsAdjustment>() { };
+        foreach (var p in playerCharacters)
+        {
+            if (p.Owner == playchar.Owner)
+            {
+                adj.AddRange(pointadjustments.Where(a => a.CharacterName == p.Name).ToList());
+            }
+        }
+        return adj;
+    }
 
     private decimal GetAttendance(PlayerCharacters playchar)
     {
