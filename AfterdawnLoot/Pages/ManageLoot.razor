@@ -229,6 +229,8 @@
     private async void SaveChangeCharacter()
     {
         currentloot.Character = newLooter;
+        //find class of new looter
+        currentloot.Class = playerCharacters.Where(p => p.Name == newLooter).FirstOrDefault().Class;
         await dataservice.UpdateCharacterLootAsync(currentloot);
         raidloot = await dataservice.GetCharacterLootAsync(RaidID);
         CloseChangeCharacter();
