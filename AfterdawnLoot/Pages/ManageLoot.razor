@@ -166,7 +166,7 @@
             {
                 <button class="btn btn-primary" @onclick="AddLoot">Paste Loot Report</button>
             }
-            <br />
+            <br /><br />
         </Authorized>
     <NotAuthorized>
         <p>You are not authorized to view this page</p>
@@ -266,63 +266,76 @@
         ShowPopup = true;
     }
 
+    private async void SetProc()
+    {
+        strError = "Processing...";
+    }
+
     private async void SaveLoot()
     {
-        //clear previous loot
-        foreach(var l in raidloot)
-        {
-            dataservice.DeleteCharacterLoot(l);
-        }
+        try
 
-        var lines = lootinput.Replace("\r\n","\n").Split('\n');
-        for (int l = 1; l < lines.Length; l++)
         {
-            var line = lines[l];
-            if (line != "")
+            //clear previous loot
+            foreach (var l in raidloot)
             {
-                var ele = line.Split('\t');
+                dataservice.DeleteCharacterLoot(l);
+            }
 
-                string player = ele[0].Split('-')[0];
-                string date = ele[1];
-                string item = ele[3];
-                string response = ele[6];
-                string rolltype = ele[15];
-                string owner = ele[19].Split('-')[0];
-                string _class = ele[8];
-
-                CharacterLoot newloot = new CharacterLoot();
-                newloot.Character = player;
-                newloot.SourceCharacter = owner;
-                newloot.Item = item;
-                newloot.LootResult = ResultLookup(response);
-                newloot.TimeStamp = date;
-                newloot.RaidID = RaidID;
-                newloot.Class = _class;
-                await dataservice.AddCharacterLootAsync(newloot);
-
-                var players = await dataservice.GetPlayersAsync();
-                //add player characters if needed
-                if (players.Where(x => x.Name == player).Count() == 0)
+            var lines = lootinput.Replace("\r\n","\n").Split('\n');
+            for (int l = 1; l < lines.Length; l++)
+            {
+                var line = lines[l];
+                if (line != "")
                 {
-                    Players pnew = new Players();
-                    pnew.Name = player;
-                    await dataservice.AddPlayersAsync(pnew);
+                    var ele = line.Split('\t');
+
+                    string player = ele[0].Split('-')[0];
+                    string date = ele[1];
+                    string item = ele[3];
+                    string response = ele[6].Replace("Mainspec/Need", "NEED").Replace("Offspec/Greed", "Offspec");
+                    string rolltype = ele[15];
+                    string owner = ele[19].Split('-')[0];
+                    string _class = ele[8];
+
+                    CharacterLoot newloot = new CharacterLoot();
+                    newloot.Character = player;
+                    newloot.SourceCharacter = owner;
+                    newloot.Item = item;
+                    newloot.LootResult = ResultLookup(response);
+                    newloot.TimeStamp = date;
+                    newloot.RaidID = RaidID;
+                    newloot.Class = _class;
+                    await dataservice.AddCharacterLootAsync(newloot);
+
+                    var players = await dataservice.GetPlayersAsync();
+                    //add player characters if needed
+                    if (players.Where(x => x.Name == player).Count() == 0)
+                    {
+                        Players pnew = new Players();
+                        pnew.Name = player;
+                        await dataservice.AddPlayersAsync(pnew);
 
 
-                    players = await dataservice.GetPlayersAsync();
+                        players = await dataservice.GetPlayersAsync();
 
 
-                    Characters cnew = new Characters();
-                    cnew.Name = player;
-                    cnew.UserID = players.Where(x => x.Name == player).Select(y => y.UserID).FirstOrDefault();
-                    cnew.IsMain = 1;
-                    cnew.Class = _class.FirstCharToUpper();
-                    await dataservice.AddCharactersAsync(cnew);
+                        Characters cnew = new Characters();
+                        cnew.Name = player;
+                        cnew.UserID = players.Where(x => x.Name == player).Select(y => y.UserID).FirstOrDefault();
+                        cnew.IsMain = 1;
+                        cnew.Class = _class.FirstCharToUpper();
+                        await dataservice.AddCharactersAsync(cnew);
+                    }
                 }
             }
+            raidloot = await dataservice.GetCharacterLootAsync(RaidID);
+            ShowPopup = false;
         }
-        raidloot = await dataservice.GetCharacterLootAsync(RaidID);
-        ShowPopup = false;
+        catch (Exception ex)
+        {
+            strError = ex.GetBaseException().Message;
+        }
     }
 
     private long ResultLookup(string response)

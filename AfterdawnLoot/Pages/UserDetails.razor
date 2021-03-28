@@ -178,7 +178,7 @@
                     i++;
                 }
 
-                var ploot = Globals.global_loot.Where(x => x.SourceCharacter == chr.Name);
+                var ploot = Globals.global_loot.Where(x => x.RaidID == raid.ID && x.SourceCharacter == chr.Name);
                 foreach (var loot in ploot)
                 {
                     string lresult = Globals.global_lootresults.Where(x => x.ID == loot.LootResult).Select(a => a.Description).FirstOrDefault().ToString();
@@ -188,7 +188,7 @@
                     }
                 }
 
-                ploot = Globals.global_loot.Where(x => x.Character == chr.Name);
+                ploot = Globals.global_loot.Where(x => x.RaidID == raid.ID && x.Character == chr.Name);
 
                 foreach (var loot in ploot)
                 {
