@@ -9,16 +9,16 @@
 
 <AuthorizeView>
     <Authorized>
-        
+
         <div class="container">
             <div class="row"><h3>Details for @playerCharacters.Where(x => x.UserID == UserID).Select(z => z.Name).FirstOrDefault()</h3></div>
-            
-            <div class="row">
+
+            <div class="row" height="50%">
                 @widget
             </div>
-        </div>
-        
 
+        </div>
+        <br />
     </Authorized>
     <NotAuthorized>
         <p>You are not authorized to view this page</p>
