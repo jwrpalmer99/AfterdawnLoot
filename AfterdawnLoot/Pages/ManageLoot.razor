@@ -70,7 +70,7 @@
                             <br /><br />
                             <!-- Button to save the user -->
                             <button class="btn btn-primary"
-                                    @onclick="SaveLoot">
+                                    @onclick="SetProc">
                                 Save
                             </button>
                             <span style="color:red">@strError</span>
@@ -269,6 +269,7 @@
     private async void SetProc()
     {
         strError = "Processing...";
+        Task.Run(() => SaveLoot());
     }
 
     private async void SaveLoot()
@@ -330,7 +331,10 @@
                 }
             }
             raidloot = await dataservice.GetCharacterLootAsync(RaidID);
+
+            strError = "";
             ShowPopup = false;
+            this.InvokeAsync(() => StateHasChanged()); 
         }
         catch (Exception ex)
         {
