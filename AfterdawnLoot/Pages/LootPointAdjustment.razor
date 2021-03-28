@@ -1,0 +1,187 @@
+@page "/lootpointadjustment"
+
+@using AfterdawnLoot.Data
+@inject AfterdawnDataServices dataservice
+@inject NavigationManager UriHelper
+@inject UserManager<IdentityUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<AuthorizeView>
+    <Authorized>
+        @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
+        {
+            <table id="characters">
+                <tr>
+                    <th>Character</th>
+                    <th>View Adjustments</th>
+                    <th>Add Adjustment</th>
+                </tr>
+                @foreach (var c in playerCharacters.Where(m => m.IsMain == 1).OrderBy(x => x.Name))
+                {
+                    <tr class="@c.Class">
+                        <td>@c.Name</td>
+                        <td><button @onclick="(() => ViewAdjustments(c))">View</button></td>
+                        <td><button @onclick="(() => AdjustPoints(c))">Add</button></td>
+                    </tr>
+                }
+
+            </table>
+        }
+        else
+        {
+            <br />
+            <p>You are not Admin or Loot Manager - go away!</p>
+        }
+        @if (ViewPopup)
+        {
+            <div class="modal" tabindex="-1" style="display:block" role="dialog" width="80%">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">View Adjustments for @adjustment.CharacterName</h3>
+                            <!-- Button to close the popup -->
+                            <button type="button" class="close"
+                                    @onclick="CloseViewPopup">
+                                <span aria-hidden="true">X</span>
+                            </button>
+                        </div>
+                        <!-- Edit form for the current user -->
+                        <div class="modal-body">
+                            <table id="characters">
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Amount</th>
+                                    <th>Reason</th>
+                                    <th>AdjustedBy</th>
+                                </tr>
+                                @foreach (var adj in pointsview.OrderByDescending(x => x.TimeStamp))
+                                {
+                                    <tr>
+                                        <td>@adj.TimeStamp</td>
+                                        <td>@adj.Adjustment</td>
+                                        <td>@adj.Reason</td>
+                                        <td>@adj.AdjustedBy</td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        @if (AdjustPopup)
+        {
+            <!-- This is the popup to create or edit a user -->
+            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Add Adjustment for @adjustment.CharacterName</h3>
+                            <!-- Button to close the popup -->
+                            <button type="button" class="close"
+                                    @onclick="CloseAdjustPopup">
+                                <span aria-hidden="true">X</span>
+                            </button>
+                        </div>
+                        <!-- Edit form for the current user -->
+                        <div class="modal-body">
+
+                            Adjustment Ammount
+                            <input type="text" class="form-control" placeholder="0" @bind="adjustment.Adjustment" id="ammount"/>
+                            <br />
+                            Reason for Adjustment
+                            <textarea class="form-control" rows="25" cols="80"
+                                      placeholder="Reason"
+                                      @bind="adjustment.Reason" />
+
+
+                            <br /><br />
+                            <!-- Button to save the user -->
+                            <button class="btn btn-primary"
+                                    @onclick="SaveAdjust">
+                                Save
+                            </button>
+                            <span style="color:red">@strError</span>
+                            <br />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <p>You are not authorized to view this page</p>
+        
+            </NotAuthorized>
+</AuthorizeView>
+@code {
+    string ADMINISTRATION_ROLE = "Administrators";
+
+    System.Security.Claims.ClaimsPrincipal CurrentUser;
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    System.Globalization.CultureInfo cultureInfo = new System.Globalization.CultureInfo("en-GB");
+
+    private List<PlayerCharacters> playerCharacters;
+    private List<CharacterLoot> raidloot;
+    private List<LootResults> lootresults;
+    bool AdjustPopup = false;
+    bool ViewPopup = false;
+    PlayerCharacters player;
+    PointsAdjustment adjustment;
+    List<PointsAdjustment> pointsview;
+    private string strError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        CurrentUser = (await authenticationStateTask).User;
+        playerCharacters = await dataservice.GetPlayerCharactersAsync();
+        lootresults = await dataservice.GetLootResultsAsync();
+    }
+
+    private void AdjustPoints(PlayerCharacters playchar)
+    {
+        adjustment = new PointsAdjustment();
+        adjustment.CharacterName = playchar.Name;
+        adjustment.AdjustedBy = CurrentUser.Identity.Name;
+        AdjustPopup = true;
+    }
+
+    private async void SaveAdjust()
+    {
+        if (adjustment.Reason == null || adjustment.Reason== "")
+        {
+            strError = "you must enter a reason";
+            return;
+        }
+        if (adjustment.Adjustment == 0)
+        {
+            strError = "you must enter an integer value (postitive or negative)";
+            return;
+        }
+        //TODO: save adjustment
+        adjustment.TimeStamp = DateTime.Now.ToString();
+        await dataservice.AddPointsAdjustmentAsync(adjustment);
+        AdjustPopup = false;
+    }
+
+    private void CloseAdjustPopup()
+    {
+        AdjustPopup = false;
+    }
+
+    private async void ViewAdjustments(PlayerCharacters playchar)
+    {
+        adjustment = new PointsAdjustment();
+        adjustment.CharacterName = playchar.Name;
+        var all = await dataservice.GetPointsAdjustmentAsync();
+        pointsview = all.Where(a => a.CharacterName == playchar.Name).ToList();
+        ViewPopup = true;
+    }
+
+    private void CloseViewPopup()
+    {
+        ViewPopup = false;
+    }
+}

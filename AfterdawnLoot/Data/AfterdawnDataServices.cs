@@ -84,6 +84,51 @@ namespace AfterdawnLoot.Data
         #endregion
 
 
+        #region PointsAdjustment
+        /// <returns></returns>
+        public async Task<List<PointsAdjustment>> GetPointsAdjustmentAsync()
+        {
+            return await dbContext.PointsAdjustment.ToListAsync();
+        }
+        /// <summary>
+        /// This method add a new Players to the DbContext and saves it
+        /// </summary>
+        /// <param name="Players"></param>
+        /// <returns></returns>
+        public async Task<PointsAdjustment> AddPointsAdjustmentAsync(PointsAdjustment PointsAdjustment)
+        {
+            try
+            {
+                dbContext.PointsAdjustment.Add(PointsAdjustment);
+                await dbContext.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            return PointsAdjustment;
+        }
+       
+        /// <summary>
+        /// This method removes and existing Players from the DbContext and saves it
+        /// </summary>
+        /// <param name="Players"></param>
+        /// <returns></returns>
+        public async Task DeletePointsAdjustmentAsync(PointsAdjustment PointsAdjustment)
+        {
+            try
+            {
+                dbContext.PointsAdjustment.Remove(PointsAdjustment);
+                await dbContext.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        #endregion
+
         #region Characters
         /// <returns></returns>
         public async Task<List<Characters>> GetCharactersAsync()
