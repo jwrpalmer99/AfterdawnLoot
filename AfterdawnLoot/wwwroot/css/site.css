@@ -5,7 +5,11 @@ html, body {
 }
 
 a, .btn-link {
-    color: #0366d6;
+    color: #fff;
+}
+
+a:hover {
+    color: orange;
 }
 
 .btn-primary {
@@ -132,3 +136,7 @@ a, .btn-link {
     text-decoration: underline;
 }
 
+.button
+{
+    background-color: chocolate;
+}

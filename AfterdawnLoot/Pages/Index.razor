@@ -8,18 +8,24 @@
 <AuthorizeView>
     <Authorized>
         @*<h1>Hello, @CurrentUser.Identity.Name!</h1>*@
+        <button @onclick="(() => ToggleAlts())">Toggle Alts</button>
+        <button @onclick="(() => Filter(1))">All Classes</button>
+        <button @onclick="(() => Filter(2))">Plate</button>
+        <button @onclick="(() => Filter(3))">Mail</button>
+        <button @onclick="(() => Filter(4))">Leather</button>
+        <button @onclick="(() => Filter(5))">Cloth</button>
         <table id="characters">
             @if (playerscores.Any())
             {
-                <button @onclick="(() => ToggleAlts())">Toggle Alts</button>
+
                 <tr>
                     <th>Details</th>
                     <th @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Owner).ToList())">Owner</th>
                     <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.Score).ToList())">Loot Score</th>
                     <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalReceived).ToList())">Loot Received</th>
                     <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalGiven).ToList())">Loot Given</th>
-                    <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalAttendance).ToList())">Total Attendance</th>
-                    <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.WeeklyAttendance).ToList())">Weekly Attendance</th>
+                    <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalAttendance).ToList())">Total Att</th>
+                    <th @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.WeeklyAttendance).ToList())">Weekly Att</th>
                     <th @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Name).ToList())">Character</th>
                     <th @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Class).ToList())">Class</th>
                     <th>Main</th>
@@ -28,43 +34,50 @@
                 </tr>
                 @foreach (var playchar in playerscores)
                 {
-                    if (playchar.IsMain == 1 || showAlts)
+                    if ((playchar.IsMain == 1 || showAlts) && (filter == "" || filter.Contains(playchar.Class)))
                     {
-                        <tr class="@playchar.Class">
-                            <td @onclick="(() => ExaminePlayer(playchar))"><img src="magni.png" /></td>
-                            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
-                            {
-                                <td @onclick="(() => ChangeOwner(playchar))">@playchar.Owner</td>
-                            }
-                            else
-                            {
-                                <td>@playchar.Owner</td>
-                            }
-                            <td>@playchar.Score.ToString()</td>
-                            <td>@playchar.TotalReceived.ToString()</td>
-                            <td>@playchar.TotalGiven.ToString()</td>
-                            <td>@playchar.TotalAttendance.ToString()</td>
-                            <td>@playchar.WeeklyAttendance.ToString()</td>
-                            <td>@playchar.Name</td>
-                            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
-                            {
-                                <td @onclick="(() => ChangeClass(playchar))">@playchar.Class</td>
-                            }
-                            else
-                            {
-                                <td>@playchar.Class</td>
-                            }
-                            <td>@playchar.IsMain</td>
-                            <td>@playchar.IsSocial</td>
-                            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
-                            {
-                                <td @onclick="(() => ChangeComment(playchar))">@playchar.Comment</td>
-                            }
-                            else
-                            {
-                                <td>@playchar.Comment</td>
-                            }
-                        </tr>
+        <tr class="@playchar.Class">
+            <td @onclick="(() => ExaminePlayer(playchar))"><img src="magni.png" /></td>
+            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+            {
+                <td @onclick="(() => ChangeOwner(playchar))">@playchar.Owner</td>
+            }
+            else
+            {
+                <td>@playchar.Owner</td>
+            }
+            <td>@playchar.Score.ToString()</td>
+            <td>@playchar.TotalReceived.ToString()</td>
+            <td>@playchar.TotalGiven.ToString()</td>
+            <td>@playchar.TotalAttendance.ToString()</td>
+            <td>@playchar.WeeklyAttendance.ToString()</td>
+            <td>@playchar.Name</td>
+            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+            {
+                <td @onclick="(() => ChangeClass(playchar))">@playchar.Class</td>
+            }
+            else
+            {
+                <td>@playchar.Class</td>
+            }
+            <td>@playchar.IsMain</td>
+            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+            {
+                <td @onclick="(() => ChangeSocial(playchar))">@playchar.IsSocial</td>
+            }
+            else
+            {
+                <td>@playchar.IsSocial</td>
+            }
+            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+            {
+                <td @onclick="(() => ChangeComment(playchar))">@playchar.Comment</td>
+            }
+            else
+            {
+                <td>@playchar.Comment</td>
+            }
+        </tr>
                     }
                 }
             }
@@ -213,6 +226,7 @@
     private List<LootResults> lootresults;
     private List<PlayerCharacterScores> playerscores = new List<PlayerCharacterScores> { };
     private List<CharacterLoot> characterloot;
+    private string filter = "";
 
     System.Security.Claims.ClaimsPrincipal CurrentUser;
     protected override async Task OnInitializedAsync()
@@ -221,7 +235,6 @@
         playerCharacters = await dataservice.GetPlayerCharactersAsync();
         playerCharacters = playerCharacters.OrderBy(x => x.Name).ToList();
         lootresults = await dataservice.GetLootResultsAsync();
-        Globals.global_lootresults = lootresults;
         Attendances = await dataservice.GetAttendanceAsync();
         players = await dataservice.GetPlayersAsync();
         raids = await dataservice.GetRaidsAsync();
@@ -230,7 +243,32 @@
         Globals.global_loot = characterloot;
         Globals.global_attendance = Attendances;
         Globals.player_char = playerCharacters;
+        Globals.global_lootresults = lootresults;
         updateplayerscores();
+    }
+
+    private void Filter(int type)
+    {
+        switch (type)
+        {
+            case 1:
+                filter = "";
+                break;
+            case 2:
+                filter = "Warrior,DeathKnight,Paladin";
+                break;
+            case 3:
+                filter = "Hunter,Shaman";
+                break;
+            case 4:
+                filter = "DemonHunter,Monk,Druid,Rogue";
+                break;
+            case 5:
+                filter = "Mage,Warlock,Priest";
+                break;
+            default:
+                break;
+        }
     }
 
     private void updateplayerscores(bool force = false)
@@ -323,114 +361,122 @@
         await dataservice.UpdateCharactersAsync(updateplayer);
         playerscores.Where(p => p.Name == currentplayer.Name).FirstOrDefault().Class = newClass;
         ShowClassPopup = false;
-     }
+    }
 
-        private void ChangeComment(PlayerCharacters playchar)
+    private void ChangeComment(PlayerCharacters playchar)
+    {
+        currentplayer = playchar;
+        newComment = playchar.Comment;
+        ShowCommentPopup = true;
+    }
+
+    private void CloseCommentPopup()
+    {
+        ShowCommentPopup = false;
+    }
+
+    private async void SaveCommentChange()
+    {
+        var v = await dataservice.GetCharactersAsync();
+        var updateplayer = v.Where(x => x.Name == currentplayer.Name).FirstOrDefault();
+        updateplayer.Comment = newComment;
+        await dataservice.UpdateCharactersAsync(updateplayer);
+        playerscores.Where(p => p.Name == currentplayer.Name).FirstOrDefault().Comment = newComment;
+        ShowCommentPopup = false;
+    }
+
+
+
+    private decimal GetAttendance(PlayerCharacters playchar)
+    {
+        decimal total = 0;
+        foreach (var p in playerCharacters)
         {
-            currentplayer = playchar;
-            newComment = playchar.Comment;
-            ShowCommentPopup = true;
-        }
-
-        private void CloseCommentPopup()
-        {
-            ShowCommentPopup = false;
-        }
-
-        private async void SaveCommentChange()
-        {
-            var v = await dataservice.GetCharactersAsync();
-            var updateplayer = v.Where(x => x.Name == currentplayer.Name).FirstOrDefault();
-            updateplayer.Comment = newComment;
-            await dataservice.UpdateCharactersAsync(updateplayer);
-            playerscores.Where(p => p.Name == currentplayer.Name).FirstOrDefault().Comment = newComment;
-            ShowCommentPopup = false;
-        }
-
-
-
-        private decimal GetAttendance(PlayerCharacters playchar)
-        {
-            decimal total = 0;
-            foreach (var p in playerCharacters)
+            if (p.Owner == playchar.Owner)
             {
-                if (p.Owner == playchar.Owner)
-                {
 
-                    var t = Attendances.Where(a => a.CharacterName == p.Name).Sum(i => i.PresentEnd) + Attendances.Where(a => a.CharacterName == p.Name).Sum(i => i.PresentStart);
-                    total += Convert.ToDecimal(t) / 2;
-                }
+                var t = Attendances.Where(a => a.CharacterName == p.Name).Sum(i => i.PresentEnd) + Attendances.Where(a => a.CharacterName == p.Name).Sum(i => i.PresentStart);
+                total += Convert.ToDecimal(t) / 2;
             }
-            return total;
         }
+        return total;
+    }
 
-        private Int64 GetThisWeeksRaidID()
+    private Int64 GetThisWeeksRaidID()
+    {
+        var cultureInfo = new System.Globalization.CultureInfo("en-GB");
+        foreach (var r in raids)
         {
-            var cultureInfo = new System.Globalization.CultureInfo("en-GB");
-            foreach (var r in raids)
+            if (Convert.ToDateTime(r.TimeStamp, cultureInfo) > DateTime.Now - new TimeSpan(7, 0, 0, 0, 0))
             {
-                if (Convert.ToDateTime(r.TimeStamp, cultureInfo) > DateTime.Now - new TimeSpan(7, 0, 0, 0, 0))
-                {
-                    return r.ID;
-                }
+                return r.ID;
             }
-            return Int64.MaxValue;
         }
+        return Int64.MaxValue;
+    }
+
+    private async void ChangeSocial(PlayerCharacters playchar)
+    {
+        playchar.IsSocial = (playchar.IsSocial == 1) ? 0 : 1;
+        Characters v = (await dataservice.GetCharactersAsync()).Where(x => x.Name == playchar.Name).FirstOrDefault();
+        v.IsSocial = (long)playchar.IsSocial;
+        await dataservice.UpdateCharactersAsync(v);
+    }
 
 
-        private decimal GetThisWeekAttendance(PlayerCharacters playchar)
+    private decimal GetThisWeekAttendance(PlayerCharacters playchar)
+    {
+        decimal total = 0;
+        foreach (var p in playerCharacters)
         {
-            decimal total = 0;
-            foreach (var p in playerCharacters)
+            if (p.Owner == playchar.Owner)
             {
-                if (p.Owner == playchar.Owner)
-                {
 
-                    var t = Attendances.Where(a => a.CharacterName == p.Name).Where(c => c.RaidID >= GetThisWeeksRaidID()).Sum(i => i.PresentEnd) + Attendances.Where(a => a.CharacterName == p.Name).Sum(i => i.PresentStart);
-                    total += Convert.ToDecimal(t) / 2;
-                }
+                var t = Attendances.Where(a => a.CharacterName == p.Name).Where(c => c.RaidID >= GetThisWeeksRaidID()).Sum(i => i.PresentEnd) + Attendances.Where(a => a.CharacterName == p.Name).Sum(i => i.PresentStart);
+                total += Convert.ToDecimal(t) / 2;
             }
-            return total;
         }
+        return total;
+    }
 
-        private List<Tuple<DateTime, string>> GetGiven(PlayerCharacters playchar)
+    private List<Tuple<DateTime, string>> GetGiven(PlayerCharacters playchar)
+    {
+        var cultureInfo = new System.Globalization.CultureInfo("en-GB");
+        List<Tuple<DateTime, string>> givenlist = new List<Tuple<DateTime, string>>();
+        var chars = playerCharacters.Where(x => x.Owner == playchar.Owner);
+        foreach (var chr in chars)
         {
-            var cultureInfo = new System.Globalization.CultureInfo("en-GB");
-            List<Tuple<DateTime, string>> givenlist = new List<Tuple<DateTime, string>>();
-            var chars = playerCharacters.Where(x => x.Owner == playchar.Owner);
-            foreach (var chr in chars)
+            var ploot = characterloot.Where(x => x.SourceCharacter == chr.Name);
+            foreach (var loot in ploot)
             {
-                var ploot = characterloot.Where(x => x.SourceCharacter == chr.Name);
-                foreach (var loot in ploot)
-                {
-                    string lresult = lootresults.Where(x => x.ID == loot.LootResult).Select(a => a.Description).FirstOrDefault().ToString();
-                    if (!lresult.ToLower().Contains("personal"))
-                        givenlist.Add(new Tuple<DateTime, string>(Convert.ToDateTime(loot.TimeStamp, cultureInfo), loot.Item));
-                }
+                string lresult = lootresults.Where(x => x.ID == loot.LootResult).Select(a => a.Description).FirstOrDefault().ToString();
+                if (!lresult.ToLower().Contains("personal"))
+                    givenlist.Add(new Tuple<DateTime, string>(Convert.ToDateTime(loot.TimeStamp, cultureInfo), loot.Item));
             }
-            return givenlist;
         }
+        return givenlist;
+    }
 
-        private List<Tuple<DateTime, string>> GetReceived(PlayerCharacters playchar)
+    private List<Tuple<DateTime, string>> GetReceived(PlayerCharacters playchar)
+    {
+        var cultureInfo = new System.Globalization.CultureInfo("en-GB");
+        List<Tuple<DateTime, string>> reclist = new List<Tuple<DateTime, string>>();
+        var chars = playerCharacters.Where(x => x.Owner == playchar.Owner);
+        foreach (var chr in chars)
         {
-            var cultureInfo = new System.Globalization.CultureInfo("en-GB");
-            List<Tuple<DateTime, string>> reclist = new List<Tuple<DateTime, string>>();
-            var chars = playerCharacters.Where(x => x.Owner == playchar.Owner);
-            foreach (var chr in chars)
+            var ploot = characterloot.Where(x => x.Character == chr.Name);
+            foreach (var loot in ploot)
             {
-                var ploot = characterloot.Where(x => x.Character == chr.Name);
-                foreach (var loot in ploot)
-                {
-                    string lresult = lootresults.Where(x => x.ID == loot.LootResult).Select(a => a.Description).FirstOrDefault().ToString();
-                    if (!lresult.ToLower().Contains("disenchant")
-                        && !lresult.ToLower().Contains("pass")
-                        && !lresult.ToLower().Contains("awarded")
-                        && !lresult.ToLower().Contains("off")
-                        && !lresult.ToLower().Contains("transmog")
-                        && !lresult.ToLower().Contains("personal"))
-                        reclist.Add(new Tuple<DateTime, string>(Convert.ToDateTime(loot.TimeStamp, cultureInfo), loot.Item));
-                }
+                string lresult = lootresults.Where(x => x.ID == loot.LootResult).Select(a => a.Description).FirstOrDefault().ToString();
+                if (!lresult.ToLower().Contains("disenchant")
+                    && !lresult.ToLower().Contains("pass")
+                    && !lresult.ToLower().Contains("awarded")
+                    && !lresult.ToLower().Contains("off")
+                    && !lresult.ToLower().Contains("transmog")
+                    && !lresult.ToLower().Contains("personal"))
+                    reclist.Add(new Tuple<DateTime, string>(Convert.ToDateTime(loot.TimeStamp, cultureInfo), loot.Item));
             }
-            return reclist;
         }
+        return reclist;
+    }
 }
