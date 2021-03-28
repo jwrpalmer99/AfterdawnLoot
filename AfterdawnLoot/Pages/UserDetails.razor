@@ -14,7 +14,14 @@
             <div class="row"><h3>Details for @playerCharacters.Where(x => x.UserID == UserID).Select(z => z.Name).FirstOrDefault()</h3></div>
 
             <div class="row" height="50%">
-                @widget
+                @if (widget == null)
+                {
+                    <div class="loader"></div>
+                }
+                else
+                {
+                    @widget           
+                }
             </div>
 
         </div>
@@ -42,23 +49,25 @@
     private List<LootResults> lootresults;
     private List<CharacterLoot> characterloot;
 
-    RenderFragment widget = __builder =>
-    {
-    <BlazorFullCalendar.FullCalendar settings="@GetSettings()"></BlazorFullCalendar.FullCalendar>
-    };
+    RenderFragment widget = null;
 
     System.Security.Claims.ClaimsPrincipal CurrentUser;
     protected override async Task OnInitializedAsync()
     {
-        CurrentUser = (await authenticationStateTask).User;
-        playerCharacters = await dataservice.GetPlayerCharactersAsync();
-        playerCharacters = playerCharacters.OrderBy(x => x.Name).ToList();
-        lootresults = await dataservice.GetLootResultsAsync();
+       
+        Task.Run(LoadData);
+    }
 
-        Attendances = await dataservice.GetAttendanceAsync();
-        raids = await dataservice.GetRaidsAsync();
-        characterloot = await dataservice.GetCharacterLootAsync();
+    private async void LoadData()
+    {
 
+        System.Threading.Thread.Sleep(3000);
+
+        widget = __builder =>
+        {
+            <BlazorFullCalendar.FullCalendar settings="@GetSettings()"></BlazorFullCalendar.FullCalendar>
+        };
+        this.InvokeAsync(() => StateHasChanged());
     }
 
     private static CalendarSettings GetSettings()
@@ -130,7 +139,7 @@
             cditem2.endTime = raidtime + new TimeSpan(0, 0, 1);
             cditem2.start = cditem.startTime;
             cditem2.end = cditem.endTime;
-            cditem2.title = " " +raid.RaidName;
+            cditem2.title = " " + raid.RaidName;
             cditem2.borderColor = "Orange";
 
             if (isEnd && isStart)
@@ -244,5 +253,4 @@
         return eventList;
 
     }
-    }
-    
+}
