@@ -379,7 +379,7 @@
         {
             ShowPopup = true;
 
-            newraid.TimeStamp = DateTime.Now.ToString();
+            newraid.TimeStamp = DateTime.Now.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
         }
 
         void ClosePopup()
@@ -392,7 +392,10 @@
         async Task SaveRaid()
         {
             try
-            {
+            {                
+                if (newraid.RaidName == null || newraid.RaidName == "") throw new Exception("You must enter a name for your raid");
+                
+                newraid.AddedBy = CurrentUser.Identity.Name;
                 var CreateResult = await dataservice.AddRaidsAsync(newraid);
 
                 // Close the Popup
