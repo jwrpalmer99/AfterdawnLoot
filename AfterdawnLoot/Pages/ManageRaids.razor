@@ -274,12 +274,12 @@
     </AuthorizeView>
     @code {
 
-        string ADMINISTRATION_ROLE = "Administrators";
+            string ADMINISTRATION_ROLE = "Administrators";
 
-        System.Security.Claims.ClaimsPrincipal CurrentUser;
-        [CascadingParameter]
-        private Task<AuthenticationState> authenticationStateTask { get; set; }
-        System.Globalization.CultureInfo cultureInfo = new System.Globalization.CultureInfo("en-GB");
+            System.Security.Claims.ClaimsPrincipal CurrentUser;
+            [CascadingParameter]
+            private Task<AuthenticationState> authenticationStateTask { get; set; }
+            System.Globalization.CultureInfo cultureInfo = new System.Globalization.CultureInfo("en-GB");
         private IEnumerable<Claim> _claims = Enumerable.Empty<Claim>();
         private List<Raids> raids;
         private List<string> starting_att;
@@ -472,48 +472,53 @@
             try
             {
                 var players = await dataservice.GetPlayersAsync();
-                var names = attendancelist.Split('\n');
+                var names = attendancelist.Split('\n').Skip(1);
                 foreach (var name in names)
                 {
+
                     var nameparts = name.Split("-");
+                    nameparts[0] = nameparts[0].Replace("\tx", "").Trim();
 
-                    //add player characters if needed
-                    if (players.Where(x => x.Name == nameparts[0]).Count() == 0)
+                    if (nameparts[0] != "")
                     {
-                        Players pnew = new Players();
-                        pnew.Name = nameparts[0];
-                        await dataservice.AddPlayersAsync(pnew);
+
+                        //add player characters if needed
+                        if (players.Where(x => x.Name == nameparts[0]).Count() == 0)
+                        {
+                            Players pnew = new Players();
+                            pnew.Name = nameparts[0];
+                            await dataservice.AddPlayersAsync(pnew);
 
 
-                        players = await dataservice.GetPlayersAsync();
+                            players = await dataservice.GetPlayersAsync();
 
 
-                        Characters cnew = new Characters();
-                        cnew.Name = nameparts[0];
-                        cnew.UserID = players.Where(x => x.Name == nameparts[0]).Select(y => y.UserID).FirstOrDefault();
-                        cnew.IsMain = 1;
-                        cnew.Class = "";
-                        await dataservice.AddCharactersAsync(cnew);
+                            Characters cnew = new Characters();
+                            cnew.Name = nameparts[0];
+                            cnew.UserID = players.Where(x => x.Name == nameparts[0]).Select(y => y.UserID).FirstOrDefault();
+                            cnew.IsMain = 1;
+                            cnew.Class = "";
+                            await dataservice.AddCharactersAsync(cnew);
+                        }
+
+                        //are we updating or adding?
+                        var att = attendances.Where(a => a.CharacterName == nameparts[0] && a.RaidID == currentraid.ID).FirstOrDefault();
+                        if (att != null)
+                        {
+                            //update
+                            att.PresentStart = 1;
+                            var CreateResult = await dataservice.UpdateAttendanceAsync(att);
+                        }
+                        else
+                        {
+                            //new entry
+                            Attendance newatt = new Attendance();
+                            newatt.CharacterName = nameparts[0];
+                            newatt.RaidID = currentraid.ID;
+                            newatt.PresentStart = 1;
+                            var CreateResult = await dataservice.AddAttendanceAsync(newatt);
+                        }
                     }
-
-                    //are we updating or adding?
-                    var att = attendances.Where(a => a.CharacterName == nameparts[0]).FirstOrDefault();
-                    if (att != null)
-                    {
-                        //update
-                        att.PresentStart = 1;
-                        var CreateResult = await dataservice.UpdateAttendanceAsync(att);
-                    }
-                    else
-                    {
-                        //new entry
-                        Attendance newatt = new Attendance();
-                        newatt.CharacterName = nameparts[0];
-                        newatt.RaidID = currentraid.ID;
-                        newatt.PresentStart = 1;
-                        var CreateResult = await dataservice.AddAttendanceAsync(newatt);
-                    }
-
                 }
 
 
@@ -536,7 +541,7 @@
 
             try
             {
-                var names = attendancelist.Split('\n');
+                var names = attendancelist.Split('\n').Skip(1); ;
                 foreach (var att in attendances.Where(a => a.RaidID == currentraid.ID))
                 {
                     //update
@@ -606,44 +611,47 @@
                 {
                     var nameparts = name.Split("-");
 
+                    nameparts[0] = nameparts[0].Replace("\tx", "").Trim();
 
-                    //add player characters if needed
-                    if (players.Where(x => x.Name == nameparts[0]).Count() == 0)
+                    if (nameparts[0] != "")
                     {
-                        Players pnew = new Players();
-                        pnew.Name = nameparts[0];
-                        await dataservice.AddPlayersAsync(pnew);
+                        //add player characters if needed
+                        if (players.Where(x => x.Name == nameparts[0]).Count() == 0)
+                        {
+                            Players pnew = new Players();
+                            pnew.Name = nameparts[0];
+                            await dataservice.AddPlayersAsync(pnew);
 
 
-                        players = await dataservice.GetPlayersAsync();
+                            players = await dataservice.GetPlayersAsync();
 
 
-                        Characters cnew = new Characters();
-                        cnew.Name = nameparts[0];
-                        cnew.UserID = players.Where(x => x.Name == nameparts[0]).Select(y => y.UserID).FirstOrDefault();
-                        cnew.IsMain = 1;
-                        cnew.Class = "";
-                        await dataservice.AddCharactersAsync(cnew);
+                            Characters cnew = new Characters();
+                            cnew.Name = nameparts[0];
+                            cnew.UserID = players.Where(x => x.Name == nameparts[0]).Select(y => y.UserID).FirstOrDefault();
+                            cnew.IsMain = 1;
+                            cnew.Class = "";
+                            await dataservice.AddCharactersAsync(cnew);
+                        }
+
+                        //are we updating or adding?
+                        var att = attendances.Where(a => a.CharacterName == nameparts[0] && a.RaidID == currentraid.ID).FirstOrDefault();
+                        if (att != null)
+                        {
+                            //update
+                            att.PresentEnd = 1;
+                            var CreateResult = await dataservice.UpdateAttendanceAsync(att);
+                        }
+                        else
+                        {
+                            //new entry
+                            Attendance newatt = new Attendance();
+                            newatt.CharacterName = nameparts[0];
+                            newatt.RaidID = currentraid.ID;
+                            newatt.PresentEnd = 1;
+                            var CreateResult = await dataservice.AddAttendanceAsync(newatt);
+                        }
                     }
-
-                    //are we updating or adding?
-                    var att = attendances.Where(a => a.CharacterName == nameparts[0]).FirstOrDefault();
-                    if (att != null)
-                    {
-                        //update
-                        att.PresentEnd = 1;
-                        var CreateResult = await dataservice.UpdateAttendanceAsync(att);
-                    }
-                    else
-                    {
-                        //new entry
-                        Attendance newatt = new Attendance();
-                        newatt.CharacterName = nameparts[0];
-                        newatt.RaidID = currentraid.ID;
-                        newatt.PresentEnd = 1;
-                        var CreateResult = await dataservice.AddAttendanceAsync(newatt);
-                    }
-
                 }
 
 
