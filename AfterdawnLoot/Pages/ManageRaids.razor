@@ -301,6 +301,7 @@
         {
             CurrentUser = (await authenticationStateTask).User;
             raids = await dataservice.GetRaidsAsync();
+            raids = raids.OrderByDescending(x => x.ID).ToList();
             attendances = await dataservice.GetAttendanceAsync();
             //playerCharacters = await dataservice.GetPlayerCharactersAsync();
         }
