@@ -8,12 +8,18 @@
 <AuthorizeView>
     <Authorized>
         @*<h1>Hello, @CurrentUser.Identity.Name!</h1>*@
-        <button class="btn-primary"  @onclick="(() => ToggleAlts())">Toggle Alts</button>
-        <button class="btn-primary" @onclick="(() => Filter(1))">All Classes</button>
-        <button class="btn-primary" @onclick="(() => Filter(2))">Plate</button>
-        <button class="btn-primary" @onclick="(() => Filter(3))">Mail</button>
-        <button class="btn-primary" @onclick="(() => Filter(4))">Leather</button>
-        <button class="btn-primary" @onclick="(() => Filter(5))">Cloth</button>
+        <button class="btn-warning" @onclick="(() => ToggleAlts())">Toggle Alts</button>
+        &ensp;
+        <button class="btn-success" @onclick="(() => Filter(1))">All Classes</button>
+        &nbsp;
+        <button class="@(filterNumber==2 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(2))">Plate</button>
+        <button class="@(filterNumber==3 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(3))">Mail</button>
+        <button class="@(filterNumber==4 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(4))">Leather</button>
+        <button class="@(filterNumber==5 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(5))">Cloth</button>
+        &nbsp;
+        <button class="@(filterNumber==6 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(6))">Strength</button>
+        <button class="@(filterNumber==7 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(7))">Agility</button>
+        <button class="@(filterNumber==8 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(8))">Intellect</button>
         <table id="characters">
             @if (playerscores.Any())
             {
@@ -37,49 +43,49 @@
                 {
                     if ((playchar.IsMain == 1 || showAlts) && (filter.Count == 0 || filter.Contains(playchar.Class)))
                     {
-        <tr class="@playchar.Class">
-            <td class="pointer" @onclick="(() => ExaminePlayer(playchar))"><img src="magni.png" height="24" width="24"/></td>
-            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
-            {
-                <td class="pointer" @onclick="(() => ChangeOwner(playchar))">@playchar.Owner</td>
-            }
-            else
-            {
-                <td>@playchar.Owner</td>
-            }
-            <td>@playchar.Score.ToString()</td>
-            <td>@playchar.TotalReceived.ToString()</td>
-            <td>@playchar.TotalGiven.ToString()</td>
-            <td>@playchar.TotalAttendance.ToString()</td>
-            <td>@playchar.WeeklyAttendance.ToString()</td>
-            <td>@playchar.AdjustmentTotal.ToString()</td>
-            <td>@playchar.Name</td>
-            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
-            {
-                <td class="pointer" @onclick="(() => ChangeClass(playchar))">@playchar.Class</td>
-            }
-            else
-            {
-                <td >@playchar.Class</td>
-            }
-            <td>@playchar.IsMain</td>
-            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
-            {
-                <td class="pointer" @onclick="(() => ChangeSocial(playchar))">@playchar.IsSocial</td>
-            }
-            else
-            {
-                <td>@playchar.IsSocial</td>
-            }
-            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
-            {
-                <td class="pointer" @onclick="(() => ChangeComment(playchar))">@playchar.Comment</td>
-            }
-            else
-            {
-                <td>@playchar.Comment</td>
-            }
-        </tr>
+                        <tr class="@playchar.Class">
+                            <td class="pointer" @onclick="(() => ExaminePlayer(playchar))"><img src="magni.png" height="24" width="24" /></td>
+                            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+                            {
+                                <td class="pointer" @onclick="(() => ChangeOwner(playchar))">@playchar.Owner</td>
+                            }
+                            else
+                            {
+                                <td>@playchar.Owner</td>
+                            }
+                            <td>@playchar.Score.ToString()</td>
+                            <td>@playchar.TotalReceived.ToString()</td>
+                            <td>@playchar.TotalGiven.ToString()</td>
+                            <td>@playchar.TotalAttendance.ToString()</td>
+                            <td>@playchar.WeeklyAttendance.ToString()</td>
+                            <td>@playchar.AdjustmentTotal.ToString()</td>
+                            <td>@playchar.Name</td>
+                            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+                            {
+                                <td class="pointer" @onclick="(() => ChangeClass(playchar))">@playchar.Class</td>
+                            }
+                            else
+                            {
+                                <td>@playchar.Class</td>
+                            }
+                            <td>@playchar.IsMain</td>
+                            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+                            {
+                                <td class="pointer" @onclick="(() => ChangeSocial(playchar))">@playchar.IsSocial</td>
+                            }
+                            else
+                            {
+                                <td>@playchar.IsSocial</td>
+                            }
+                            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+                            {
+                                <td class="pointer" @onclick="(() => ChangeComment(playchar))">@playchar.Comment</td>
+                            }
+                            else
+                            {
+                                <td>@playchar.Comment</td>
+                            }
+                        </tr>
                     }
                 }
             }
@@ -230,6 +236,7 @@
     private List<CharacterLoot> characterloot;
     private List<PointsAdjustment> pointadjustments;
     private List<string> filter = new List<string> { };
+    private int filterNumber = 1;
 
     System.Security.Claims.ClaimsPrincipal CurrentUser;
     protected override async Task OnInitializedAsync()
@@ -271,9 +278,19 @@
             case 5:
                 filter = new List<string> { "Mage", "Warlock", "Priest" };
                 break;
+            case 6:
+                filter = new List<string> { "Warrior", "DeathKnight", "Paladin" };
+                break;
+            case 7:
+                filter = new List<string> { "Druid", "Monk", "Hunter", "Rogue", "Shaman", "DemonHunter" };
+                break;
+            case 8:
+                filter = new List<string> { "Druid", "Mage", "Monk", "Paladin", "Priest", "Shaman", "Warlock" };
+                break;
             default:
                 break;
         }
+        filterNumber = type;
     }
 
     private void updateplayerscores(bool force = false)
