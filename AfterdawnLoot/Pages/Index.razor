@@ -8,12 +8,12 @@
 <AuthorizeView>
     <Authorized>
         @*<h1>Hello, @CurrentUser.Identity.Name!</h1>*@
-        <button @onclick="(() => ToggleAlts())">Toggle Alts</button>
-        <button @onclick="(() => Filter(1))">All Classes</button>
-        <button @onclick="(() => Filter(2))">Plate</button>
-        <button @onclick="(() => Filter(3))">Mail</button>
-        <button @onclick="(() => Filter(4))">Leather</button>
-        <button @onclick="(() => Filter(5))">Cloth</button>
+        <button class="btn-primary"  @onclick="(() => ToggleAlts())">Toggle Alts</button>
+        <button class="btn-primary" @onclick="(() => Filter(1))">All Classes</button>
+        <button class="btn-primary" @onclick="(() => Filter(2))">Plate</button>
+        <button class="btn-primary" @onclick="(() => Filter(3))">Mail</button>
+        <button class="btn-primary" @onclick="(() => Filter(4))">Leather</button>
+        <button class="btn-primary" @onclick="(() => Filter(5))">Cloth</button>
         <table id="characters">
             @if (playerscores.Any())
             {
