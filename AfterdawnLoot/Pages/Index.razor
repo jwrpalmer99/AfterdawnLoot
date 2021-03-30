@@ -20,192 +20,195 @@
         <button class="@(filterNumber==6 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(6))">Strength</button>
         <button class="@(filterNumber==7 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(7))">Agility</button>
         <button class="@(filterNumber==8 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(8))">Intellect</button>
+        &nbsp;
+        <button class="@(filterNumber==9 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(9))">Tank</button>
+        <button class="@(filterNumber==10 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(10))">Healer</button>
         <table id="characters">
             @if (playerscores.Any())
             {
 
-                <tr>
-                    <th>Details</th>
-                    <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Owner).ToList())">Owner</th>
-                    <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.Score).ToList())">Current Score</th>
-                    <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalReceived).ToList())">Loot Received</th>
-                    <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalGiven).ToList())">Loot Given</th>
-                    <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalAttendance).ToList())">Total Att</th>
-                    <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.WeeklyAttendance).ToList())">Weekly Att</th>
-                    <th>Adjustment</th>
-                    <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Name).ToList())">Character</th>
-                    <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Class).ToList())">Class</th>
-                    <th>Main</th>
-                    <th>Social</th>
-                    <th>Comment</th>
-                </tr>
-                @foreach (var playchar in playerscores)
+            <tr>
+                <th>Details</th>
+                <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Owner).ToList())">Owner</th>
+                <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.Score).ToList())">Current Score</th>
+                <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalReceived).ToList())">Loot Received</th>
+                <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalGiven).ToList())">Loot Given</th>
+                <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalAttendance).ToList())">Total Att</th>
+                <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.WeeklyAttendance).ToList())">Weekly Att</th>
+                <th>Adjustment</th>
+                <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Name).ToList())">Character</th>
+                <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Class).ToList())">Class</th>
+                <th>Main</th>
+                <th>Social</th>
+                <th>Comment</th>
+            </tr>
+            @foreach (var playchar in playerscores)
                 {
                     if ((playchar.IsMain == 1 || showAlts) && (filter.Count == 0 || filter.Contains(playchar.Class)))
                     {
-                        <tr class="@playchar.Class">
-                            <td class="pointer" @onclick="(() => ExaminePlayer(playchar))"><img src="magni.png" height="24" width="24" /></td>
-                            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+            <tr class="@playchar.Class">
+                <td class="pointer" @onclick="(() => ExaminePlayer(playchar))"><img src="magni.png" height="24" width="24" /></td>
+                @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
                             {
-                                <td class="pointer" @onclick="(() => ChangeOwner(playchar))">@playchar.Owner</td>
+                <td class="pointer" @onclick="(() => ChangeOwner(playchar))">@playchar.Owner</td>
                             }
                             else
                             {
-                                <td>@playchar.Owner</td>
+                <td>@playchar.Owner</td>
                             }
-                            <td>@playchar.Score.ToString()</td>
-                            <td>@playchar.TotalReceived.ToString()</td>
-                            <td>@playchar.TotalGiven.ToString()</td>
-                            <td>@playchar.TotalAttendance.ToString()</td>
-                            <td>@playchar.WeeklyAttendance.ToString()</td>
-                            <td>@playchar.AdjustmentTotal.ToString()</td>
-                            <td>@playchar.Name</td>
-                            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+                <td>@playchar.Score.ToString()</td>
+                <td>@playchar.TotalReceived.ToString()</td>
+                <td>@playchar.TotalGiven.ToString()</td>
+                <td>@playchar.TotalAttendance.ToString()</td>
+                <td>@playchar.WeeklyAttendance.ToString()</td>
+                <td>@playchar.AdjustmentTotal.ToString()</td>
+                <td>@playchar.Name</td>
+                @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
                             {
-                                <td class="pointer" @onclick="(() => ChangeClass(playchar))">@playchar.Class</td>
+                <td class="pointer" @onclick="(() => ChangeClass(playchar))">@playchar.Class</td>
                             }
                             else
                             {
-                                <td>@playchar.Class</td>
+                <td>@playchar.Class</td>
                             }
-                            <td>@playchar.IsMain</td>
-                            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+                <td>@playchar.IsMain</td>
+                @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
                             {
-                                <td class="pointer" @onclick="(() => ChangeSocial(playchar))">@playchar.IsSocial</td>
+                <td class="pointer" @onclick="(() => ChangeSocial(playchar))">@playchar.IsSocial</td>
                             }
                             else
                             {
-                                <td>@playchar.IsSocial</td>
+                <td>@playchar.IsSocial</td>
                             }
-                            @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+                @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
                             {
-                                <td class="pointer" @onclick="(() => ChangeComment(playchar))">@playchar.Comment</td>
+                <td class="pointer" @onclick="(() => ChangeComment(playchar))">@playchar.Comment</td>
                             }
                             else
                             {
-                                <td>@playchar.Comment</td>
+                <td>@playchar.Comment</td>
                             }
-                        </tr>
+            </tr>
                     }
                 }
             }
             else
             {
-                <tr><td colspan="6"><strong>No players in the system yet</strong></td></tr>
+            <tr><td colspan="6"><strong>No players in the system yet</strong></td></tr>
             }
         </table>
         @if (@context.User.IsInRole(ADMINISTRATION_ROLE))
         {
-            @*<br /><p>You can only see this if you're in the 'Administrators' role.</p>*@
+        @*<br /><p>You can only see this if you're in the 'Administrators' role.</p>*@
         }
         <br />
         @if (ShowOwnerPopup)
         {
             <!-- This is the popup to create or edit a user -->
-            <div class="modal" tabindex="-1" style="display:block" role="dialog">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3 class="modal-title">Set Main for @currentplayer.Name</h3>
-                            <!-- Button to close the popup -->
-                            <button type="button" class="close"
-                                    @onclick="CloseOwnerPopup">
-                                <span aria-hidden="true">X</span>
-                            </button>
-                        </div>
-                        <!-- Edit form for the current user -->
-                        <div class="modal-body">
+        <div class="modal" tabindex="-1" style="display:block" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Set Main for @currentplayer.Name</h3>
+                        <!-- Button to close the popup -->
+                        <button type="button" class="close"
+                                @onclick="CloseOwnerPopup">
+                            <span aria-hidden="true">X</span>
+                        </button>
+                    </div>
+                    <!-- Edit form for the current user -->
+                    <div class="modal-body">
 
-                            <select class="form-control"
-                                    placeholder="New Owner"
-                                    @bind="newOwner">
-                                @foreach (var p in players.OrderBy(c => c.Name))
+                        <select class="form-control"
+                                placeholder="New Owner"
+                                @bind="newOwner">
+                            @foreach (var p in players.OrderBy(c => c.Name))
                                 {
-                                    <option>@p.Name</option>
+                            <option>@p.Name</option>
                                 }
-                            </select>
-                            <br /><br />
-                            <!-- Button to save the user -->
-                            <button class="btn btn-primary"
-                                    @onclick="SaveOwnerChange">
-                                Save
-                            </button>
-                            <span style="color:red">@strError</span>
-                            <br />
-                        </div>
+                        </select>
+                        <br /><br />
+                        <!-- Button to save the user -->
+                        <button class="btn btn-primary"
+                                @onclick="SaveOwnerChange">
+                            Save
+                        </button>
+                        <span style="color:red">@strError</span>
+                        <br />
                     </div>
                 </div>
             </div>
+        </div>
         }
         @if (ShowCommentPopup)
         {
             <!-- This is the popup to create or edit a user -->
-            <div class="modal" tabindex="-1" style="display:block" role="dialog">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3 class="modal-title">Set Comment for @currentplayer.Name</h3>
-                            <!-- Button to close the popup -->
-                            <button type="button" class="close"
-                                    @onclick="CloseCommentPopup">
-                                <span aria-hidden="true">X</span>
-                            </button>
-                        </div>
-                        <!-- Edit form for the current user -->
-                        <div class="modal-body">
+        <div class="modal" tabindex="-1" style="display:block" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Set Comment for @currentplayer.Name</h3>
+                        <!-- Button to close the popup -->
+                        <button type="button" class="close"
+                                @onclick="CloseCommentPopup">
+                            <span aria-hidden="true">X</span>
+                        </button>
+                    </div>
+                    <!-- Edit form for the current user -->
+                    <div class="modal-body">
 
-                            <textarea class="form-control" cols="80"
-                                      placeholder="Comment"
-                                      @bind="newComment" />
-                            <br /><br />
-                            <!-- Button to save the user -->
-                            <button class="btn btn-primary"
-                                    @onclick="SaveCommentChange">
-                                Save
-                            </button>
-                            <span style="color:red">@strError</span>
-                            <br />
-                        </div>
+                        <textarea class="form-control" cols="80"
+                                  placeholder="Comment"
+                                  @bind="newComment" />
+                        <br /><br />
+                        <!-- Button to save the user -->
+                        <button class="btn btn-primary"
+                                @onclick="SaveCommentChange">
+                            Save
+                        </button>
+                        <span style="color:red">@strError</span>
+                        <br />
                     </div>
                 </div>
             </div>
+        </div>
         }
         @if (ShowClassPopup)
         {
             <!-- This is the popup to create or edit a user -->
-            <div class="modal" tabindex="-1" style="display:block" role="dialog">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3 class="modal-title">Set Class for @currentplayer.Name</h3>
-                            <!-- Button to close the popup -->
-                            <button type="button" class="close"
-                                    @onclick="CloseClassPopup">
-                                <span aria-hidden="true">X</span>
-                            </button>
-                        </div>
-                        <!-- Edit form for the current user -->
-                        <div class="modal-body">
+        <div class="modal" tabindex="-1" style="display:block" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Set Class for @currentplayer.Name</h3>
+                        <!-- Button to close the popup -->
+                        <button type="button" class="close"
+                                @onclick="CloseClassPopup">
+                            <span aria-hidden="true">X</span>
+                        </button>
+                    </div>
+                    <!-- Edit form for the current user -->
+                    <div class="modal-body">
 
-                            <select class="form-control"
-                                    placeholder="New Class"
-                                    @bind="newClass">
-                                @foreach (var p in Globals.classes)
+                        <select class="form-control"
+                                placeholder="New Class"
+                                @bind="newClass">
+                            @foreach (var p in Globals.classes)
                                 {
-                                    <option>@p</option>
+                            <option>@p</option>
                                 }
-                            </select>
-                            <!-- Button to save the user -->
-                            <button class="btn btn-primary"
-                                    @onclick="SaveClassChange">
-                                Save
-                            </button>
-                            <span style="color:red">@strError</span>
-                            <br />
-                        </div>
+                        </select>
+                        <!-- Button to save the user -->
+                        <button class="btn btn-primary"
+                                @onclick="SaveClassChange">
+                            Save
+                        </button>
+                        <span style="color:red">@strError</span>
+                        <br />
                     </div>
                 </div>
             </div>
+        </div>
         }
     </Authorized>
     <NotAuthorized>
@@ -286,6 +289,12 @@
                 break;
             case 8:
                 filter = new List<string> { "Druid", "Mage", "Monk", "Paladin", "Priest", "Shaman", "Warlock" };
+                break;
+            case 9:
+                filter = new List<string> { "DeathKnight", "DemonHunter", "Druid", "Monk", "Paladin", "Warrior" };
+                break;
+            case 10:
+                filter = new List<string> { "Druid", "Monk", "Paladin", "Priest", "Shaman"};
                 break;
             default:
                 break;
