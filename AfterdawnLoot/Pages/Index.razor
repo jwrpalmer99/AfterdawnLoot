@@ -35,7 +35,7 @@
                 </tr>
                 @foreach (var playchar in playerscores)
                 {
-                    if ((playchar.IsMain == 1 || showAlts) && (filter == "" || filter.Contains(playchar.Class)))
+                    if ((playchar.IsMain == 1 || showAlts) && (filter.Count == 0 || filter.Contains(playchar.Class)))
                     {
         <tr class="@playchar.Class">
             <td class="pointer" @onclick="(() => ExaminePlayer(playchar))"><img src="magni.png" height="24" width="24"/></td>
@@ -229,7 +229,7 @@
     private List<PlayerCharacterScores> playerscores = new List<PlayerCharacterScores> { };
     private List<CharacterLoot> characterloot;
     private List<PointsAdjustment> pointadjustments;
-    private string filter = "";
+    private List<string> filter = new List<string> { };
 
     System.Security.Claims.ClaimsPrincipal CurrentUser;
     protected override async Task OnInitializedAsync()
@@ -257,19 +257,19 @@
         switch (type)
         {
             case 1:
-                filter = "";
+                filter = new List<string> { };
                 break;
             case 2:
-                filter = "Warrior,DeathKnight,Paladin";
+                filter = new List<string> { "Warrior","DeathKnight","Paladin" };
                 break;
             case 3:
-                filter = "Hunter,Shaman";
+                filter = new List<string> { "Hunter","Shaman" };
                 break;
             case 4:
-                filter = "DemonHunter,Monk,Druid,Rogue";
+                filter = new List<string> { "DemonHunter","Monk","Druid","Rogue" };
                 break;
             case 5:
-                filter = "Mage,Warlock,Priest";
+                filter = new List<string> { "Mage", "Warlock", "Priest" };
                 break;
             default:
                 break;
