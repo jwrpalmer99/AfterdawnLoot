@@ -376,6 +376,7 @@
             await dataservice.UpdateRaidsAsync(currentraid);
             raids = await dataservice.GetRaidsAsync();
             raids = raids.OrderByDescending(x => x.ID).ToList();
+            Globals.playerscores = new List<PlayerCharacterScores>();
             ShowNamePopup = false;
         }
 
@@ -385,6 +386,7 @@
             await dataservice.UpdateRaidsAsync(currentraid);
             raids = await dataservice.GetRaidsAsync();
             raids = raids.OrderByDescending(x => x.ID).ToList();
+            Globals.playerscores = new List<PlayerCharacterScores>();
             ShowDatePopup = false;
         }
 
@@ -462,6 +464,7 @@
                 // Refresh Users
                 raids = await dataservice.GetRaidsAsync();
                 raids = raids.OrderByDescending(x => x.ID).ToList();
+                Globals.playerscores = new List<PlayerCharacterScores>();
             }
             catch (Exception ex)
             {
@@ -503,6 +506,7 @@
             attendances = await dataservice.GetAttendanceAsync();
             ShowDeleteRaid = false;
             strError = "";
+            Globals.playerscores = new List<PlayerCharacterScores>();
             this.InvokeAsync(() => StateHasChanged());
         }
 
@@ -598,6 +602,7 @@
                 // Close the Popup
                 strError = "";
                 ShowStartingPopup = false;
+                Globals.playerscores = new List<PlayerCharacterScores>();
                 this.InvokeAsync(() => StateHasChanged());
 
             }
@@ -630,6 +635,7 @@
                 ShowStartingPopup = false;
                 // Refresh Users
                 attendances = await dataservice.GetAttendanceAsync();
+                Globals.playerscores = new List<PlayerCharacterScores>();
             }
             catch (Exception ex)
             {
@@ -659,6 +665,7 @@
                 ShowEndingPopup = false;
                 // Refresh Users
                 attendances = await dataservice.GetAttendanceAsync();
+                Globals.playerscores = new List<PlayerCharacterScores>();
             }
             catch (Exception ex)
             {
@@ -750,6 +757,7 @@
                 // Refresh Users
                 attendances = await dataservice.GetAttendanceAsync();
                 strError = "";
+                Globals.playerscores = new List<PlayerCharacterScores>();
                 ShowEndingPopup = false;
                 this.InvokeAsync(() => StateHasChanged());
             }
