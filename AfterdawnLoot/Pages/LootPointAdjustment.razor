@@ -163,6 +163,7 @@
         //TODO: save adjustment
         adjustment.TimeStamp = DateTime.Now.ToString();
         await dataservice.AddPointsAdjustmentAsync(adjustment);
+        Globals.playerscores = new List<PlayerCharacterScores>();
         AdjustPopup = false;
     }
 
