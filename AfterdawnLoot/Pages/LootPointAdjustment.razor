@@ -1,5 +1,5 @@
 @page "/lootpointadjustment"
-
+@inherits LPAComponent
 @using AfterdawnLoot.Data
 @inject AfterdawnDataServices dataservice
 @inject NavigationManager UriHelper
@@ -91,7 +91,7 @@
                             <input type="text" class="form-control" placeholder="0" @bind="adjustment.Adjustment" id="ammount"/>
                             <br />
                             Reason for Adjustment
-                            <textarea class="form-control" rows="25" cols="80"
+                            <textarea class="form-control" rows="5" cols="80"
                                       placeholder="Reason"
                                       @bind="adjustment.Reason" />
 
@@ -164,6 +164,7 @@
         adjustment.TimeStamp = DateTime.Now.ToString();
         await dataservice.AddPointsAdjustmentAsync(adjustment);
         Globals.playerscores = new List<PlayerCharacterScores>();
+        await RefreshScoresAsync();
         AdjustPopup = false;
     }
 

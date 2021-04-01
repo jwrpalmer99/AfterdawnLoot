@@ -1,5 +1,5 @@
 @page "/manageraids"
-
+@inherits ManageRaidsComponent 
 @using AfterdawnLoot.Data
 @inject AfterdawnDataServices dataservice
 @inject NavigationManager UriHelper
@@ -377,6 +377,7 @@
             raids = await dataservice.GetRaidsAsync();
             raids = raids.OrderByDescending(x => x.ID).ToList();
             Globals.playerscores = new List<PlayerCharacterScores>();
+            await RefreshScoresAsync();
             ShowNamePopup = false;
         }
 
@@ -388,6 +389,7 @@
             raids = raids.OrderByDescending(x => x.ID).ToList();
             Globals.playerscores = new List<PlayerCharacterScores>();
             ShowDatePopup = false;
+            this.InvokeAsync(() => StateHasChanged());
         }
 
         private void CloseDatePopup()
@@ -465,6 +467,8 @@
                 raids = await dataservice.GetRaidsAsync();
                 raids = raids.OrderByDescending(x => x.ID).ToList();
                 Globals.playerscores = new List<PlayerCharacterScores>();
+                await RefreshScoresAsync();
+                this.InvokeAsync(() => StateHasChanged());
             }
             catch (Exception ex)
             {
@@ -507,6 +511,7 @@
             ShowDeleteRaid = false;
             strError = "";
             Globals.playerscores = new List<PlayerCharacterScores>();
+            await RefreshScoresAsync();
             this.InvokeAsync(() => StateHasChanged());
         }
 
@@ -603,6 +608,7 @@
                 strError = "";
                 ShowStartingPopup = false;
                 Globals.playerscores = new List<PlayerCharacterScores>();
+                await RefreshScoresAsync();
                 this.InvokeAsync(() => StateHasChanged());
 
             }
@@ -636,6 +642,8 @@
                 // Refresh Users
                 attendances = await dataservice.GetAttendanceAsync();
                 Globals.playerscores = new List<PlayerCharacterScores>();
+                await RefreshScoresAsync();
+                this.InvokeAsync(() => StateHasChanged());
             }
             catch (Exception ex)
             {
@@ -666,6 +674,8 @@
                 // Refresh Users
                 attendances = await dataservice.GetAttendanceAsync();
                 Globals.playerscores = new List<PlayerCharacterScores>();
+                await RefreshScoresAsync();
+                this.InvokeAsync(() => StateHasChanged());
             }
             catch (Exception ex)
             {
@@ -758,6 +768,7 @@
                 attendances = await dataservice.GetAttendanceAsync();
                 strError = "";
                 Globals.playerscores = new List<PlayerCharacterScores>();
+                await RefreshScoresAsync();
                 ShowEndingPopup = false;
                 this.InvokeAsync(() => StateHasChanged());
             }
