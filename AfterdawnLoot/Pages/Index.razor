@@ -305,22 +305,26 @@
     private void updateplayerscores(bool force = false)
     {
         if (force)
+            Globals.playerscores = new List<PlayerCharacterScores>();
 
-            playerscores = new List<PlayerCharacterScores>();
-        foreach (var p in playerCharacters)
+        if (Globals.playerscores.Count == 0)
         {
-            PlayerCharacterScores newscore = new PlayerCharacterScores(p);
-            newscore.Adjustments = GetAdjustments(p);
-            newscore.TotalAttendance = GetAttendance(p);
-            newscore.WeeklyAttendance = GetThisWeekAttendance(p);
-            newscore.LootReceived = GetReceived(p);
-            newscore.LootGiven = GetGiven(p);
-            newscore.TotalGiven = newscore.LootGiven.Count() * 3.0M;
-            newscore.TotalReceived = newscore.LootReceived.Count() * 6.0M;
-            newscore.Score = newscore.Adjustments.Sum(a => a.Adjustment) + newscore.TotalGiven - newscore.TotalReceived + newscore.TotalAttendance;
-            playerscores.Add(newscore);
+            foreach (var p in playerCharacters)
+            {
+                PlayerCharacterScores newscore = new PlayerCharacterScores(p);
+                newscore.Adjustments = GetAdjustments(p);
+                newscore.TotalAttendance = GetAttendance(p);
+                newscore.WeeklyAttendance = GetThisWeekAttendance(p);
+                newscore.LootReceived = GetReceived(p);
+                newscore.LootGiven = GetGiven(p);
+                newscore.TotalGiven = newscore.LootGiven.Count() * 3.0M;
+                newscore.TotalReceived = newscore.LootReceived.Count() * 6.0M;
+                newscore.Score = newscore.Adjustments.Sum(a => a.Adjustment) + newscore.TotalGiven - newscore.TotalReceived + newscore.TotalAttendance;
+                Globals.playerscores.Add(newscore);
+            }
+
         }
-        playerscores = playerscores.OrderByDescending(x => x.Score).ToList();
+        playerscores = Globals.playerscores.OrderByDescending(x => x.Score).ToList();
     }
 
     private void ExaminePlayer(PlayerCharacters playchar)
@@ -369,6 +373,7 @@
         Globals.global_raids = raids;
         Globals.global_attendance = Attendances;
         Globals.player_char = playerCharacters;
+        Globals.playerscores = new List<PlayerCharacterScores>();
         ShowOwnerPopup = false;
     }
 
@@ -392,6 +397,7 @@
         updateplayer.Class = newClass;
         await dataservice.UpdateCharactersAsync(updateplayer);
         playerscores.Where(p => p.Name == currentplayer.Name).FirstOrDefault().Class = newClass;
+        Globals.playerscores = new List<PlayerCharacterScores>();
         ShowClassPopup = false;
     }
 
@@ -414,6 +420,7 @@
         updateplayer.Comment = newComment;
         await dataservice.UpdateCharactersAsync(updateplayer);
         playerscores.Where(p => p.Name == currentplayer.Name).FirstOrDefault().Comment = newComment;
+        Globals.playerscores = new List<PlayerCharacterScores>();
         ShowCommentPopup = false;
     }
 
