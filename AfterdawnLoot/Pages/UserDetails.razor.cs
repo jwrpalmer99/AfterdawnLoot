@@ -7,18 +7,18 @@ using System.Threading.Tasks;
 
 namespace AfterdawnLoot
 {
-    public class ManageLootComponent : ComponentBase
+    public class UserDetailsListenerComponent : ComponentBase, IHandle<RefreshScores>
     {
         [Inject]
         private IEventAggregator _eventAggregator { get; set; }
 
-        public async Task RefreshScoresAsync()
+        public bool recalc = false;
+
+        public Task HandleAsync(RefreshScores message)
         {
-            try
-            {
-                await _eventAggregator.PublishAsync(new RefreshScores());
-            }
-            catch { }
+            recalc = true;
+            InvokeAsync(() => StateHasChanged());
+            return Task.CompletedTask;
         }
     }
 
