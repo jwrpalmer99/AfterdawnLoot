@@ -14,8 +14,11 @@ namespace AfterdawnLoot
 
         public async Task RefreshScoresAsync()
         {
-            await _eventAggregator.PublishAsync(new RefreshScores());
+            try
+            {
+                await _eventAggregator.PublishAsync(new RefreshScores());
+            }
+            catch { }
         }
     }
-
 }
