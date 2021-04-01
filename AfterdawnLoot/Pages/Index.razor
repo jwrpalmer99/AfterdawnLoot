@@ -1,13 +1,20 @@
 ﻿@page "/"
+@inherits IndexListenerComponent
 @inject UserManager<IdentityUser> _UserManager
 @inject RoleManager<IdentityRole> _RoleManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject AfterdawnDataServices dataservice
 @inject NavigationManager UriHelper
 
+ 
 <AuthorizeView>
     <Authorized>
         @*<h1>Hello, @CurrentUser.Identity.Name!</h1>*@
+        @if (recalc)
+        {
+            updateplayerscores(true);
+            recalc = false;
+        }
         <button class="btn-warning" @onclick="(() => ToggleAlts())">Toggle Alts</button>
         &ensp;
         <button class="btn-success" @onclick="(() => Filter(1))">All Classes</button>
@@ -217,6 +224,9 @@
 </AuthorizeView>
 
 @code {
+    [Inject]
+    private IEventAggregator _eventAggregator { get; set; }
+
     string ADMINISTRATION_ROLE = "Administrators";
     bool showAlts = false;
     List<PlayerCharacters> playerCharacters = new List<PlayerCharacters>();
@@ -242,9 +252,18 @@
     private int filterNumber = 1;
 
     System.Security.Claims.ClaimsPrincipal CurrentUser;
+
     protected override async Task OnInitializedAsync()
     {
+        _eventAggregator.Subscribe(this);
+
         CurrentUser = (await authenticationStateTask).User;
+        await getData();
+        await updateplayerscores();
+    }
+
+    private async Task getData()
+    {
         playerCharacters = await dataservice.GetPlayerCharactersAsync();
         playerCharacters = playerCharacters.OrderBy(x => x.Name).ToList();
         lootresults = await dataservice.GetLootResultsAsync();
@@ -259,8 +278,9 @@
         Globals.player_char = playerCharacters;
         Globals.global_lootresults = lootresults;
         Globals.global_pointadjustments = pointadjustments;
-        updateplayerscores();
+        return;
     }
+
 
     private void Filter(int type)
     {
@@ -302,10 +322,14 @@
         filterNumber = type;
     }
 
-    private void updateplayerscores(bool force = false)
+    private async Task updateplayerscores(bool force = false)
     {
         if (force)
+        {
             Globals.playerscores = new List<PlayerCharacterScores>();
+            dataservice.dbContext = new AfterdawnDbContext(dataservice.dbContext.myoptions);
+            await getData();
+        }
 
         if (Globals.playerscores.Count == 0)
         {
@@ -325,6 +349,7 @@
 
         }
         playerscores = Globals.playerscores.OrderByDescending(x => x.Score).ToList();
+        return;
     }
 
     private void ExaminePlayer(PlayerCharacters playchar)

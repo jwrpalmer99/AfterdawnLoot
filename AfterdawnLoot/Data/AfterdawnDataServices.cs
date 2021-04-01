@@ -8,7 +8,7 @@ namespace AfterdawnLoot.Data
 {
     public class AfterdawnDataServices
     {
-        private AfterdawnDbContext dbContext;
+        public AfterdawnDbContext dbContext;
 
         #region Constructor
         public AfterdawnDataServices(AfterdawnDbContext dbContext)

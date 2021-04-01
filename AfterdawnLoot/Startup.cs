@@ -62,6 +62,7 @@ namespace AfterdawnLoot
             services.AddDatabaseDeveloperPageExceptionFilter();
             services.AddSingleton<WeatherForecastService>();
             services.AddScoped<AfterdawnDataServices> ();
+            services.AddEventAggregator(options => options.AutoRefresh = true);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
