@@ -1,5 +1,6 @@
 @page "/manageloot"
 @page "/manageloot/{RaidID:int}"
+@inherits ManageLootComponent 
 @using AfterdawnLoot.Data
 @inject AfterdawnDataServices dataservice
 
@@ -176,6 +177,7 @@
 
 @code
 {
+
     [Parameter]
     public int RaidID { get; set; }
 
@@ -233,6 +235,7 @@
         currentloot.Class = playerCharacters.Where(p => p.Name == newLooter).FirstOrDefault().Class;
         await dataservice.UpdateCharacterLootAsync(currentloot);
         raidloot = await dataservice.GetCharacterLootAsync(RaidID);
+        await RefreshScoresAsync();
         Globals.playerscores = new List<PlayerCharacterScores>();
         CloseChangeCharacter();
     }
@@ -254,6 +257,7 @@
         currentloot.LootResult = lootresults.Where(x => x.Description == newResult).Select(z => z.ID).FirstOrDefault();
         await dataservice.UpdateCharacterLootAsync(currentloot);
         raidloot = await dataservice.GetCharacterLootAsync(RaidID);
+        await RefreshScoresAsync();
         Globals.playerscores = new List<PlayerCharacterScores>();
         CloseChangeResult();
     }
@@ -336,6 +340,7 @@
                 raidloot = await dataservice.AddCharacterLootListAsync(newloots);
             //raidloot = await dataservice.GetCharacterLootAsync(RaidID);
             Globals.playerscores = new List<PlayerCharacterScores>();
+            await RefreshScoresAsync();
             strError = "";
             ShowPopup = false;
             this.InvokeAsync(() => StateHasChanged());

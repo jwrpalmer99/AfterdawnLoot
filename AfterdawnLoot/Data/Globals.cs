@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using AfterdawnLoot;
 
+
 public class Globals
 {
     public static List<Raids> global_raids;
@@ -14,4 +15,16 @@ public class Globals
     public static List<PlayerCharacterScores> playerscores = new List<PlayerCharacterScores> { };
     public static List<string> classes = new List<string> { "DeathKnight", "DemonHunter", "Druid", "Hunter", "Mage", "Monk", "Paladin", "Priest", "Rogue", "Shaman", "Warlock", "Warrior" };
 }
+public class CounterIncreasedMessage
+{
+    public int _currentCount;
 
+    public CounterIncreasedMessage(int cc)
+    {
+        _currentCount = cc;
+    }
+
+ 
+}
+
+public class RefreshScores{ }

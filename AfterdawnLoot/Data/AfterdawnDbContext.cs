@@ -5,9 +5,11 @@ namespace AfterdawnLoot.Data
 {
     public class AfterdawnDbContext : DbContext
     {
+        public DbContextOptions<AfterdawnDbContext> myoptions;
+
         public AfterdawnDbContext(DbContextOptions<AfterdawnDbContext> options) : base(options)
         {
-
+            myoptions = options;
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
