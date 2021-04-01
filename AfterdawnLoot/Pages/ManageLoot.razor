@@ -277,12 +277,11 @@
         try
 
         {
-            //clear previous loot
-            foreach (var l in raidloot)
-            {
-                dataservice.DeleteCharacterLoot(l);
-            }
+            //clear previous loot           
+            await dataservice.DeleteCharacterLootListAsync(raidloot);
 
+
+            List<CharacterLoot> newloots = new List<CharacterLoot> { };
             var lines = lootinput.Replace("\r\n","\n").Split('\n');
             for (int l = 1; l < lines.Length; l++)
             {
@@ -307,7 +306,8 @@
                     newloot.TimeStamp = date;
                     newloot.RaidID = RaidID;
                     newloot.Class = _class;
-                    await dataservice.AddCharacterLootAsync(newloot);
+                    newloots.Add(newloot);
+                    //await dataservice.AddCharacterLootAsync(newloot);
 
                     var players = await dataservice.GetPlayersAsync();
                     //add player characters if needed
@@ -330,11 +330,13 @@
                     }
                 }
             }
-            raidloot = await dataservice.GetCharacterLootAsync(RaidID);
+            if (newloots.Count > 0)
+                raidloot = await dataservice.AddCharacterLootListAsync(newloots);
+            //raidloot = await dataservice.GetCharacterLootAsync(RaidID);
 
             strError = "";
             ShowPopup = false;
-            this.InvokeAsync(() => StateHasChanged()); 
+            this.InvokeAsync(() => StateHasChanged());
         }
         catch (Exception ex)
         {
