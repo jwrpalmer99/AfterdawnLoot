@@ -533,6 +533,10 @@
             {
                 var players = await dataservice.GetPlayersAsync();
                 var names = attendancelist.Split('\n');
+
+                List<Attendance> updatelist = new List<Attendance> { };
+                List<Attendance> newlist = new List<Attendance> { };
+
                 foreach (var name in names)
                 {
 
@@ -567,7 +571,8 @@
                         {
                             //update
                             att.PresentStart = 1;
-                            var CreateResult = await dataservice.UpdateAttendanceAsync(att);
+                            updatelist.Add(att);
+                            //var CreateResult = await dataservice.UpdateAttendanceAsync(att);
                         }
                         else
                         {
@@ -576,10 +581,17 @@
                             newatt.CharacterName = nameparts[0];
                             newatt.RaidID = currentraid.ID;
                             newatt.PresentStart = 1;
-                            var CreateResult = await dataservice.AddAttendanceAsync(newatt);
+                            newlist.Add(newatt);
+                            //var CreateResult = await dataservice.AddAttendanceAsync(newatt);
                         }
                     }
                 }
+
+                //push changes
+                if (newlist.Count > 0)
+                    await dataservice.AddAttendanceListAsync(newlist);
+                if (updatelist.Count > 0)
+                    await dataservice.UpdateAttendanceListAsync(updatelist);
 
                 // Refresh Users
                 attendances = await dataservice.GetAttendanceAsync();
@@ -601,14 +613,18 @@
 
             try
             {
+                List<Attendance> atts = new List<Attendance> { };
                 var names = attendancelist.Split('\n').Skip(1); ;
                 foreach (var att in attendances.Where(a => a.RaidID == currentraid.ID))
                 {
                     //update
                     att.PresentStart = 0;
-                    var CreateResult = await dataservice.UpdateAttendanceAsync(att);
+                    atts.Add(att);
+                    //var CreateResult = await dataservice.UpdateAttendanceAsync(att);
                 }
 
+                if (atts.Count > 0)
+                    await dataservice.UpdateAttendanceListAsync(atts);
 
                 // Close the Popup
                 ShowStartingPopup = false;
@@ -627,14 +643,17 @@
 
             try
             {
+                List<Attendance> atts = new List<Attendance> { };
                 var names = attendancelist.Split('\n');
                 foreach (var att in attendances.Where(a => a.RaidID == currentraid.ID))
                 {
                     //update
                     att.PresentEnd = 0;
-                    var CreateResult = await dataservice.UpdateAttendanceAsync(att);
+                    atts.Add(att);
+                    //var CreateResult = await dataservice.UpdateAttendanceAsync(att);
                 }
-
+                if (atts.Count > 0)
+                    await dataservice.UpdateAttendanceListAsync(atts);
 
                 // Close the Popup
                 ShowEndingPopup = false;
@@ -667,6 +686,10 @@
             {
                 var players = await dataservice.GetPlayersAsync();
                 var names = attendancelist.Split('\n');
+
+                List<Attendance> updatelist = new List<Attendance> { };
+                List<Attendance> newlist = new List<Attendance> { };
+
                 foreach (var name in names)
                 {
                     var nameparts = name.Split("-");
@@ -700,7 +723,8 @@
                         {
                             //update
                             att.PresentEnd = 1;
-                            var CreateResult = await dataservice.UpdateAttendanceAsync(att);
+                            updatelist.Add(att);
+                            //var CreateResult = await dataservice.UpdateAttendanceAsync(att);
                         }
                         else
                         {
@@ -709,11 +733,18 @@
                             newatt.CharacterName = nameparts[0];
                             newatt.RaidID = currentraid.ID;
                             newatt.PresentEnd = 1;
-                            var CreateResult = await dataservice.AddAttendanceAsync(newatt);
+                            newlist.Add(newatt);
+                            //var CreateResult = await dataservice.AddAttendanceAsync(newatt);
                         }
                     }
                 }
 
+
+                //push changes
+                if (newlist.Count > 0)
+                    await dataservice.AddAttendanceListAsync(newlist);
+                if (updatelist.Count > 0)
+                    await dataservice.UpdateAttendanceListAsync(updatelist);
 
                 // Close the Popup
                 // Refresh Users

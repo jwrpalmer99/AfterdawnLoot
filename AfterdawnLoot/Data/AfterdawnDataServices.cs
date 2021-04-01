@@ -244,6 +244,35 @@ namespace AfterdawnLoot.Data
             }
             return Attendance;
         }
+
+        public async Task<List<Attendance>> AddAttendanceListAsync(List<Attendance> Attendances)
+        {
+            try
+            {
+                await dbContext.Attendance.AddRangeAsync(Attendances);
+                await dbContext.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            return Attendances;
+        }
+
+        public async Task<List<Attendance>> UpdateAttendanceListAsync(List<Attendance> Attendances)
+        {
+            try
+            {
+                dbContext.Attendance.UpdateRange(Attendances);
+                await dbContext.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            return Attendances;
+        }
+
         /// <summary>
         /// This method update and existing Attendance and saves the changes
         /// </summary>
@@ -266,6 +295,20 @@ namespace AfterdawnLoot.Data
             }
             return Attendance;
         }
+
+        public async Task DeleteAttendanceListAsync(List<Attendance> Attendances)
+        {
+            try
+            {
+                dbContext.Attendance.RemoveRange(Attendances);
+                await dbContext.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         /// <summary>
         /// This method removes and existing Attendance from the DbContext and saves it
         /// </summary>
@@ -383,6 +426,20 @@ namespace AfterdawnLoot.Data
             return await dbContext.CharacterLoot.Where(x => x.RaidID == raidID).ToListAsync();
         }
 
+        public async Task<List<CharacterLoot>> AddCharacterLootListAsync(List<CharacterLoot> CharacterLoots)
+        {
+            try
+            {
+                await dbContext.CharacterLoot.AddRangeAsync(CharacterLoots);
+                await dbContext.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            return CharacterLoots;
+        }
+
         /// <summary>
         /// This method add a new Raids to the DbContext and saves it
         /// </summary>
@@ -422,6 +479,20 @@ namespace AfterdawnLoot.Data
                 throw;
             }
             return CharacterLoot;
+        }
+
+
+        public async Task DeleteCharacterLootListAsync(List<CharacterLoot> CharacterLoots)
+        {
+            try
+            {
+                dbContext.CharacterLoot.RemoveRange(CharacterLoots);
+                await dbContext.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
         /// <summary>
         /// This method removes and existing Raids from the DbContext and saves it
