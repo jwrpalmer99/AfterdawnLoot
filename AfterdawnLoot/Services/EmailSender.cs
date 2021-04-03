@@ -17,14 +17,7 @@ namespace WebPWrecover.Services
 
         public Task SendEmailAsync(string email, string subject, string message)
         {
-            var client = new SendGridClient("***REMOVED***");
-            var from = new EmailAddress("jeremyp@outlook.com");
-
-            var to = new EmailAddress(email);
-            var plainTextContent = message;
-            var htmlContent = message;
-            var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
-            return client.SendEmailAsync(msg);
+            return Task.CompletedTask;
         }
 
     }
