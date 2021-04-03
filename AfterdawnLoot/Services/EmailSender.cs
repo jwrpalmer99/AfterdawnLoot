@@ -17,6 +17,7 @@ namespace WebPWrecover.Services
 
         public Task SendEmailAsync(string email, string subject, string message)
         {
+            //do nothing
             return Task.CompletedTask;
         }
 
