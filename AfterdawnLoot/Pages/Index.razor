@@ -54,7 +54,7 @@
                     if ((playchar.IsMain == 1 || showAlts) && (filter.Count == 0 || filter.Contains(playchar.Class)))
                     {
             <tr class="@playchar.Class">
-                <td class="pointer" @onclick="(() => ExaminePlayer(playchar))"><img src="magni.png" height="24" width="24" /></td>
+                <td class="pointer" @onclick="(() => ExaminePlayer(playchar))">&#x1F50D;&#xFE0E;</td>
                 @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
                             {
                 <td class="pointer" @onclick="(() => ChangeOwner(playchar))">@playchar.Owner</td>
