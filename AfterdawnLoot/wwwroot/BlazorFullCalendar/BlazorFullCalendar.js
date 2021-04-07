@@ -109,8 +109,6 @@ window.BlazorFullCalendar = {
             if (calendarSettings.eventMouseEnter !== null) calendarSettings.eventMouseEnter = eval(calendarSettings.eventMouseEnter);
             if (calendarSettings.eventMouseLeave !== null) calendarSettings.eventMouseLeave = eval(calendarSettings.eventMouseLeave);
             if (calendarSettings.eventDragStart !== null) calendarSettings.eventDragStart = eval(calendarSettings.eventDragStart);
-            if (calendarSettings.eventDragStop !== null) calendarSettings.eventDragStop = eval(calendarSettings.eventDragStop);
-
             if (calendarSettings.droppable === true) {
                 BlazorFullCalendar.draggables = new FullCalendarInteraction.Draggable(document.getElementById('external-events'), {
                     itemSelector: '.fc-event',
