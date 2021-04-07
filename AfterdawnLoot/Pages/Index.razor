@@ -41,7 +41,7 @@
                 <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalReceived).ToList())">Loot Received</th>
                 <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalGiven).ToList())">Loot Given</th>
                 <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalAttendance).ToList())">Total Att</th>
-                <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.WeeklyAttendance).ToList())">Weekly Att</th>
+                
                 <th>Adjustment</th>
                 <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Name).ToList())">Character</th>
                 <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Class).ToList())">Class</th>
@@ -67,7 +67,6 @@
                 <td>@playchar.TotalReceived.ToString()</td>
                 <td>@playchar.TotalGiven.ToString()</td>
                 <td>@playchar.TotalAttendance.ToString()</td>
-                <td>@playchar.WeeklyAttendance.ToString()</td>
                 <td>@playchar.AdjustmentTotal.ToString()</td>
                 <td>@playchar.Name</td>
                 @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
