@@ -7,39 +7,45 @@
 
 <AuthorizeView>
     <Authorized>
-        <h1>Afterdawn Loot for @Convert.ToDateTime(currentraid.TimeStamp, cultureInfo).ToString("dd/MM/yyyy")</h1><table id="characters">
+        @if (recalc)
+        {
+            Updateloot();
+            recalc = false;
+        }
+        <h1>Afterdawn Loot for @Convert.ToDateTime(currentraid.TimeStamp, cultureInfo).ToString("dd/MM/yyyy")</h1>
+        <table id="characters">
             @if (playerCharacters.Any())
             {
                 <tr>
-                    <th class="pointer" @onclick="(() => raidloot = raidloot.OrderBy(x=> x.Character).ToList())">Character</th>
-                    <th class="pointer" @onclick="(() => raidloot = raidloot.OrderBy(x=> x.Item).ToList())">Item</th>
-                    <th class="pointer" @onclick="(() => raidloot = raidloot.OrderBy(x=> x.LootResult).ToList())">Loot Result</th>
-                    <th class="pointer" @onclick="(() => raidloot = raidloot.OrderBy(x=> x.SourceCharacter).ToList())">Source Character</th>
+                    <th class="pointer" @onclick="(() => raidloot = raidloot.OrderBy(x => x.Character).ToList())">Character</th>
+                    <th class="pointer" @onclick="(() => raidloot = raidloot.OrderBy(x => x.Item).ToList())">Item</th>
+                    <th class="pointer" @onclick="(() => raidloot = raidloot.OrderBy(x => x.LootResult).ToList())">Loot Result</th>
+                    <th class="pointer" @onclick="(() => raidloot = raidloot.OrderBy(x => x.SourceCharacter).ToList())">Source Character</th>
                 </tr>
                 @foreach (var loot in raidloot)
                 {
-        <tr class="@loot.Class">
-            @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
-            {
-                <td class="pointer" @onclick="(() => ChangeCharacter(loot))">@loot.Character</td>
-            }
-            else
-            {
-                <td>@loot.Character</td>
-            }
+                    <tr class="@loot.Class">
+                        @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
+                        {
+                            <td class="pointer" @onclick="(() => ChangeCharacter(loot))">@loot.Character</td>
+                        }
+                        else
+                        {
+                            <td>@loot.Character</td>
+                        }
 
-            <td><a style="color:black" href="@ParseLootUrl(loot.Item)" target="_blank">@ParseLootName(loot.Item)</a></td>
-            @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
-            {
-                <td class="pointer" @onclick="(() => ChangeResult(loot))">@GetLootResultDesc(loot.LootResult)</td>
-            }
-            else
-            {
-                <td>@GetLootResultDesc(loot.LootResult)</td>
-            }
+                        <td><a style="color: black" href="@ParseLootUrl(loot.Item)" target="_blank">@ParseLootName(loot.Item)</a></td>
+                        @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
+                        {
+                            <td class="pointer" @onclick="(() => ChangeResult(loot))">@GetLootResultDesc(loot.LootResult)</td>
+                        }
+                        else
+                        {
+                            <td>@GetLootResultDesc(loot.LootResult)</td>
+                        }
 
-            <td>@loot.SourceCharacter</td>
-        </tr>
+                        <td>@loot.SourceCharacter</td>
+                    </tr>
                 }
             }
             else
@@ -50,7 +56,7 @@
         @if (ShowPopup)
         {
             <!-- This is the popup to create or edit a user -->
-            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+            <div class="modal" tabindex="-1" style="display: block" role="dialog">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -68,14 +74,14 @@
                                       placeholder="Loot Report Input"
                                       @bind="lootinput" />
 
-                            <br /><br />
+                            <br/><br/>
                             <!-- Button to save the user -->
                             <button class="btn btn-primary"
                                     @onclick="SetProc">
                                 Save
                             </button>
-                            <span style="color:red">@strError</span>
-                            <br />
+                            <span style="color: red">@strError</span>
+                            <br/>
                         </div>
                     </div>
                 </div>
@@ -84,7 +90,7 @@
         @if (ShowChangeCharacter)
         {
             <!-- This is the popup to create or edit a user -->
-            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+            <div class="modal" tabindex="-1" style="display: block" role="dialog">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -108,67 +114,67 @@
                                 }
                             </select>
 
-                            <br /><br />
+                            <br/><br/>
                             <!-- Button to save the user -->
                             <button class="btn btn-primary"
                                     @onclick="SaveChangeCharacter">
                                 Save
                             </button>
-                            <span style="color:red">@strError</span>
-                            <br />
+                            <span style="color: red">@strError</span>
+                            <br/>
                         </div>
                     </div>
                 </div>
             </div>
         }
 
-            @if (ShowChangeResult)
-            {
-                <!-- This is the popup to create or edit a user -->
-                <div class="modal" tabindex="-1" style="display:block" role="dialog">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h3 class="modal-title">Change Loot Result</h3>
-                                <!-- Button to close the popup -->
-                                <button type="button" class="close"
-                                        @onclick="CloseChangeResult">
-                                    <span aria-hidden="true">X</span>
-                                </button>
-                            </div>
-                            <!-- Edit form for the current user -->
-                            <div class="modal-body">
+        @if (ShowChangeResult)
+        {
+            <!-- This is the popup to create or edit a user -->
+            <div class="modal" tabindex="-1" style="display: block" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Change Loot Result</h3>
+                            <!-- Button to close the popup -->
+                            <button type="button" class="close"
+                                    @onclick="CloseChangeResult">
+                                <span aria-hidden="true">X</span>
+                            </button>
+                        </div>
+                        <!-- Edit form for the current user -->
+                        <div class="modal-body">
 
 
-                                <select class="form-control"
-                                        placeholder="Select Loot Result"
-                                        @bind="newResult">
-                                    @foreach (var p in lootresults.OrderBy(x => x.Description))
-                                    {
-                                        <option>@p.Description</option>
-                                    }
-                                </select>
+                            <select class="form-control"
+                                    placeholder="Select Loot Result"
+                                    @bind="newResult">
+                                @foreach (var p in lootresults.OrderBy(x => x.Description))
+                                {
+                                    <option>@p.Description</option>
+                                }
+                            </select>
 
-                                <br /><br />
-                                <!-- Button to save the user -->
-                                <button class="btn btn-primary"
-                                        @onclick="SaveChangeResult">
-                                    Save
-                                </button>
-                                <span style="color:red">@strError</span>
-                                <br />
-                            </div>
+                            <br/><br/>
+                            <!-- Button to save the user -->
+                            <button class="btn btn-primary"
+                                    @onclick="SaveChangeResult">
+                                Save
+                            </button>
+                            <span style="color: red">@strError</span>
+                            <br/>
                         </div>
                     </div>
                 </div>
-            }
-            <br />
-            @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
-            {
-                <button class="btn btn-primary" @onclick="AddLoot">Paste Loot Report</button>
-            }
-            <br /><br />
-        </Authorized>
+            </div>
+        }
+        <br/>
+        @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
+        {
+            <button class="btn btn-primary" @onclick="AddLoot">Paste Loot Report</button>
+        }
+        <br/><br/>
+    </Authorized>
     <NotAuthorized>
         <p>You are not authorized to view this page</p>
     </NotAuthorized>
@@ -180,6 +186,9 @@
 
     [Parameter]
     public int RaidID { get; set; }
+
+    [Inject]
+    private IEventAggregator _eventAggregator { get; set; }
 
     string ADMINISTRATION_ROLE = "Administrators";
 
@@ -209,6 +218,7 @@
         raidloot = await dataservice.GetCharacterLootAsync(RaidID);
         currentraid = await dataservice.GetRaidByID(RaidID);
         lootresults = await dataservice.GetLootResultsAsync();
+        _eventAggregator.Subscribe(this);
     }
 
     private string GetLootResultDesc(long? lootresultID=0)
@@ -378,5 +388,11 @@
     private void ClosePopup()
     {
         ShowPopup = false;
+    }
+
+    private async void Updateloot()
+    {
+        dataservice.dbContext = new AfterdawnDbContext(dataservice.dbContext.myoptions);
+        raidloot = await dataservice.GetCharacterLootAsync(RaidID);
     }
 }

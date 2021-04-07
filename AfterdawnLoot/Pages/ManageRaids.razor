@@ -11,7 +11,11 @@
         <Authorized>
 
             <h1>Afterdawn Raids</h1>
-
+            @if (recalc)
+            {
+                UpdateRaids();
+                recalc = false;
+            }
 
             @if (raids == null)
             {
@@ -307,6 +311,9 @@
     </AuthorizeView>
     @code {
 
+        [Inject]
+        private IEventAggregator _eventAggregator { get; set; }
+
         string ADMINISTRATION_ROLE = "Administrators";
 
         System.Security.Claims.ClaimsPrincipal CurrentUser;
@@ -338,7 +345,16 @@
             raids = await dataservice.GetRaidsAsync();
             raids = raids.OrderByDescending(x => x.ID).ToList();
             attendances = await dataservice.GetAttendanceAsync();
+            _eventAggregator.Subscribe(this);
             //playerCharacters = await dataservice.GetPlayerCharactersAsync();
+        }
+
+        private async void UpdateRaids()
+        {
+            dataservice.dbContext = new AfterdawnDbContext(dataservice.dbContext.myoptions);
+            raids = await dataservice.GetRaidsAsync();
+            raids = raids.OrderByDescending(x => x.ID).ToList();
+            attendances = await dataservice.GetAttendanceAsync();
         }
 
         private void ManageLoot(Raids raid)
