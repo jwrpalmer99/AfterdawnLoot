@@ -175,7 +175,7 @@ namespace AfterdawnLoot
                     cditemadj.start = cditemadj.startTime;
                     cditemadj.end = cditemadj.endTime;
                     cditemadj.title = adj.Adjustment + " - " + adj.Reason;
-                    cditemadj.borderColor = "Purple";
+                    //cditemadj.borderColor = "Purple";
 
                     if (adj.Adjustment > 0)
                         cditemadj.title = "+" + cditemadj.title;

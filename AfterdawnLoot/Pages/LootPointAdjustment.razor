@@ -161,7 +161,7 @@
             return;
         }
         //TODO: save adjustment
-        adjustment.TimeStamp = DateTime.Now.ToString();
+        adjustment.TimeStamp = DateTime.Now.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
         await dataservice.AddPointsAdjustmentAsync(adjustment);
         Globals.playerscores = new List<PlayerCharacterScores>();
         await RefreshScoresAsync();

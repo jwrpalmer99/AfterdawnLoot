@@ -358,9 +358,9 @@ namespace AfterdawnLoot.Data
                 dbContext.Raids.Add(Raids);
                 await dbContext.SaveChangesAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
+                throw ex;
             }
             return Raids;
         }

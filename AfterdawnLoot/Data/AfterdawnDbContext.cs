@@ -12,6 +12,11 @@ namespace AfterdawnLoot.Data
             myoptions = options;
         }
 
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            optionsBuilder.UseSqlite("Data Source=./database/afterdawn.db3", opts => opts.CommandTimeout(5));
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<PlayerCharacters>()
