@@ -43,8 +43,14 @@
                         {
                             <td>@GetLootResultDesc(loot.LootResult)</td>
                         }
-
-                        <td>@loot.SourceCharacter</td>
+                        @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
+                        {
+                            <td class="pointer" @onclick="(() => ChangeSource(loot))">@loot.SourceCharacter</td>
+                        }
+                        else
+                        {
+                            <td>@loot.SourceCharacter</td>
+                        }
                     </tr>
                 }
             }
@@ -127,7 +133,46 @@
                 </div>
             </div>
         }
+    @if (ShowChangeSource)
+    {
+        <!-- This is the popup to create or edit a user -->
+        <div class="modal" tabindex="-1" style="display: block" role="dialog">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Change Loot Source</h3>
+                        <!-- Button to close the popup -->
+                        <button type="button" class="close"
+                                @onclick="CloseChangeSource">
+                            <span aria-hidden="true">X</span>
+                        </button>
+                    </div>
+                    <!-- Edit form for the current user -->
+                    <div class="modal-body">
 
+
+                        <select class="form-control"
+                                placeholder="Select Loot Source"
+                                @bind="newSource">
+                            @foreach (var p in playerCharacters.OrderBy(x => x.Name))
+                            {
+                                <option>@p.Name</option>
+                            }
+                        </select>
+
+                        <br/><br/>
+                        <!-- Button to save the user -->
+                        <button class="btn btn-primary"
+                                @onclick="SaveChangeSource">
+                            Save
+                        </button>
+                        <span style="color: red">@strError</span>
+                        <br/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
         @if (ShowChangeResult)
         {
             <!-- This is the popup to create or edit a user -->
@@ -200,12 +245,14 @@
     bool ShowPopup = false;
     bool ShowChangeCharacter = false;
     bool ShowChangeResult = false;
+    bool ShowChangeSource = false;
     string newResult;
     Raids newraid = new Raids();
     string strError = "";
     private string lootinput = "";
     private Raids currentraid;
     private string newLooter;
+    public string newSource;
     private CharacterLoot currentloot;
     private List<PlayerCharacters> playerCharacters;
     private List<CharacterLoot> raidloot;
@@ -238,6 +285,13 @@
         ShowChangeCharacter = true;
     }
 
+    private void ChangeSource(CharacterLoot loot)
+    {
+        currentloot = loot;
+        newSource = playerCharacters.OrderBy(x => x.Name).First().Name;
+        ShowChangeSource= true;
+    }
+
     private async void SaveChangeCharacter()
     {
         currentloot.Character = newLooter;
@@ -250,9 +304,24 @@
         CloseChangeCharacter();
     }
 
+    private async void SaveChangeSource()
+    {
+        currentloot.SourceCharacter = newSource;
+        await dataservice.UpdateCharacterLootAsync(currentloot);
+        raidloot = await dataservice.GetCharacterLootAsync(RaidID);
+        await RefreshScoresAsync();
+        Globals.playerscores = new List<PlayerCharacterScores>();
+        CloseChangeSource();
+    }
+
     private void CloseChangeCharacter()
     {
         ShowChangeCharacter = false;
+    }
+
+    private void CloseChangeSource()
+    {
+        ShowChangeSource = false;
     }
 
     private void ChangeResult(CharacterLoot loot)
