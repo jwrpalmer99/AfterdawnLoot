@@ -1,0 +1,137 @@
+﻿@page "/timelinechart"
+@page "/timelinechart/{UserID:int}"
+@inherits UserDetailsListenerComponent 
+@inject UserManager<IdentityUser> _UserManager
+@inject RoleManager<IdentityRole> _RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JsRuntime
+@using Microsoft.EntityFrameworkCore
+@using Plotly.Blazor.Traces.ScatterLib
+
+<AuthorizeView>
+    <Authorized>
+       
+        <div class="container">
+            <div class="row"><h3>Details for @Globals.player_char.Where(x => x.UserID == UserID).Select(z => z.Name).FirstOrDefault()</h3></div>
+        
+               <PlotlyChart @bind-Config="config" @bind-Layout="layout" @bind-Data="data" @ref="chart"/>
+
+        </div>
+        <br />
+    </Authorized>
+    <NotAuthorized>
+        <p>You are not authorized to view this page</p>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code
+{
+    PlotlyChart chart;
+    Config config = new Config();
+    Layout layout = new Layout();
+    IList<ITrace> data;
+
+    [Inject]
+    private IEventAggregator _eventAggregator { get; set; }
+
+    [Parameter]
+    public int UserID { get; set; }
+    string ADMINISTRATION_ROLE = "Administrators";
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
+    System.Security.Claims.ClaimsPrincipal CurrentUser;
+    protected override async Task OnInitializedAsync()
+    {
+        _eventAggregator.Subscribe(this);
+        CurrentUser = (await authenticationStateTask).User;
+        ChartData();
+    }
+
+    private void ChartData()
+    {
+        try
+        {
+            List<object> newXList = new List<object> { };
+            List<object> newYList = new List<object> { };
+
+            PlayerCharacterScores scores = Globals.playerscores.Where(p => p.UserID == UserID).First();
+            SortedDictionary<DateTime, decimal> deltas = new SortedDictionary<DateTime, decimal>{ };
+
+            foreach (var g in scores.LootGiven)
+            {
+                if (deltas.Keys.Contains(g.Item1))
+                {
+                    deltas[g.Item1] = deltas[g.Item1] + 3;
+                }
+                else
+                {
+                    deltas.Add(g.Item1, 3);
+                }
+            }
+
+            foreach (var g in scores.LootReceived)
+            {
+                if (deltas.Keys.Contains(g.Item1))
+                {
+                    deltas[g.Item1] = deltas[g.Item1] - 6;
+                }
+                else
+                {
+                    deltas.Add(g.Item1, -6);
+                }
+            }
+
+            foreach (var g in scores.Adjustments)
+            {
+                DateTime d = DateTime.Parse(g.TimeStamp);
+                if (deltas.Keys.Contains(d))
+                {
+                    deltas[d] = deltas[d] + (decimal)g.Adjustment;
+                }
+                else
+                {
+                    deltas.Add(d, (decimal)g.Adjustment);
+                }
+            }
+            
+            if (scores.Attendance != null)
+            {
+                foreach (var g in scores.Attendance)
+                {
+                    if (deltas.Keys.Contains(g.Item1))
+                    {
+                        deltas[g.Item1] = deltas[g.Item1] + g.Item2;
+                    }
+                    else
+                    {
+                        deltas.Add(g.Item1, g.Item2);
+                    }
+                }
+            }
+
+            decimal runningTotal = 0;
+            foreach(var g in deltas)
+            {
+                newXList.Add(g.Key);
+                runningTotal = runningTotal + g.Value;
+                newYList.Add(runningTotal);
+            }
+            // Using of the interface IList is important for the event callback!
+            data = new List<ITrace>
+        {
+            new Scatter
+            {
+                Name = "ScatterTrace",
+                Mode = ModeFlag.Lines | ModeFlag.Markers,
+                X = newXList,
+                Y = newYList
+            }
+        };
+        }
+        catch (Exception ex)
+        {  JsRuntime.InvokeVoidAsync("alert", ex.Message + ".. " + ex.InnerException); // Alert
+        }
+    }
+}

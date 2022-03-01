@@ -152,7 +152,7 @@ namespace AfterdawnLoot
         public String CharacterName { get; set; }
 
         [NotNull]
-        public Int64 Adjustment { get; set; }
+        public double Adjustment { get; set; }
 
         public String Reason { get; set; }
 
@@ -180,4 +180,16 @@ namespace AfterdawnLoot
 
     }
 
+    public partial class TierAdjustment
+    {
+
+        [NotNull]
+        public Int64 AdjustmentPercent { get; set; }
+
+        public String TierName { get; set; }
+
+        public String TimeStamp { get; set; }
+
+        public Int64? ZeroNegatives { get; set; }
+    }
 }

@@ -94,6 +94,8 @@ namespace AfterdawnLoot
                 //now get the loot
                 List<string> given = new List<string> { };
                 List<string> taken = new List<string> { };
+                List<string> givenUrl = new List<string> { };
+                List<string> takenUrl = new List<string> { };
                 var cultureInfo = new System.Globalization.CultureInfo("en-GB");
                 foreach (var chr in player_chars)
                 {
@@ -105,6 +107,7 @@ namespace AfterdawnLoot
                         if (!lresult.ToLower().Contains("personal"))
                         {
                             given.Add(ParseLootName(loot.Item));
+                            givenUrl.Add(ParseLootUrl(loot.Item));
                         }
                     }
 
@@ -121,7 +124,7 @@ namespace AfterdawnLoot
                             && !lresult.ToLower().Contains("personal"))
                         {
                             taken.Add(ParseLootName(loot.Item));
-
+                            takenUrl.Add(ParseLootUrl(loot.Item));
                         }
                     }
                 }
@@ -137,7 +140,7 @@ namespace AfterdawnLoot
                     cditem3.title = string.Join('\n', given);
                     cditem3.backgroundColor = "#77a441";
                     cditem3.rendering = "";
-
+                    //cditem3.url = givenUrl.First();
                     eventList[i] = (cditem3);
                     i++;
                 }
@@ -154,7 +157,7 @@ namespace AfterdawnLoot
                     cditem3.title = string.Join('\n', taken);
                     cditem3.backgroundColor = "#c3666f";
                     cditem3.rendering = "";
-
+                    //cditem3.url = takenUrl.First();
                     eventList[i] = (cditem3);
                     i++;
                 }
@@ -204,6 +207,15 @@ namespace AfterdawnLoot
             var name = elem[3];
 
             return name;
+        }
+
+        private static string ParseLootUrl(string lootstring)
+        {
+            var elem = lootstring.Split('"');
+            if (elem == null || elem.Length < 4) return "";
+            var url = elem[1];
+
+            return url;
         }
     }
 

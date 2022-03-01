@@ -52,5 +52,6 @@ namespace AfterdawnLoot.Data
         public DbSet<CharacterLoot> CharacterLoot { get; set; }
 
         public DbSet<PointsAdjustment> PointsAdjustment { get; set; }
+
     }
 }

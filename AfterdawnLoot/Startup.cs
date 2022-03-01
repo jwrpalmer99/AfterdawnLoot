@@ -1,5 +1,6 @@
 using AfterdawnLoot.Areas.Identity;
 using AfterdawnLoot.Data;
+using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -70,9 +71,11 @@ namespace AfterdawnLoot
             services.AddServerSideBlazor().AddHubOptions(x => x.MaximumReceiveMessageSize = 102400000);
             services.AddScoped<AuthenticationStateProvider, RevalidatingIdentityAuthenticationStateProvider<IdentityUser>>();
             services.AddDatabaseDeveloperPageExceptionFilter();
-            services.AddSingleton<WeatherForecastService>();
             services.AddScoped<AfterdawnDataServices> ();
+            services.AddScoped<UserState> ();
             services.AddEventAggregator(options => options.AutoRefresh = true);
+            services.AddHttpContextAccessor();
+            services.AddBlazoredLocalStorage();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

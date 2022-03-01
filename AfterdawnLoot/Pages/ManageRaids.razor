@@ -6,15 +6,21 @@
 @inject UserManager<IdentityUser> _UserManager
 @inject RoleManager<IdentityRole> _RoleManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
-
-    <AuthorizeView>
-        <Authorized>
+@inject UserState userState
+ 
+@*    <AuthorizeView>
+        <Authorized>*@
 
             <h1>Afterdawn Raids</h1>
             @if (recalc)
             {
                 UpdateRaids();
                 recalc = false;
+            }
+        
+            @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
+            {
+                <button class="btn btn-primary" @onclick="AddRaid">Add a raid</button>
             }
 
             @if (raids == null)
@@ -300,15 +306,12 @@
                     </div>
                 </div>
             }
-            @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
-            {
-                <button class="btn btn-primary" @onclick="AddRaid">Add a raid</button>
-            }
-        </Authorized>
+            
+@*        </Authorized>
         <NotAuthorized>
             <p>You are not authorized to view this page</p>
         </NotAuthorized>
-    </AuthorizeView>
+    </AuthorizeView>*@
     @code {
 
         [Inject]
@@ -557,6 +560,7 @@
             try
             {
                 var players = await dataservice.GetPlayersAsync();
+                var characters = await dataservice.GetCharactersAsync();
                 var names = attendancelist.Split('\n');
 
                 List<Attendance> updatelist = new List<Attendance> { };
@@ -581,6 +585,18 @@
 
                             players = await dataservice.GetPlayersAsync();
 
+
+                            Characters cnew = new Characters();
+                            cnew.Name = nameparts[0];
+                            cnew.UserID = players.Where(x => x.Name == nameparts[0]).Select(y => y.UserID).FirstOrDefault();
+                            cnew.IsMain = 1;
+                            cnew.Class = "";
+                            await dataservice.AddCharactersAsync(cnew);
+                        }
+
+                        //add character if missing (but player is present - not sure how this could happen)
+                        else if (characters.Where(x => x.Name == nameparts[0]).Count() == 0)
+                        {                         
 
                             Characters cnew = new Characters();
                             cnew.Name = nameparts[0];

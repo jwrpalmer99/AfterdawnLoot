@@ -5,20 +5,27 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject AfterdawnDataServices dataservice
 @inject NavigationManager UriHelper
+@inject UserState userState
+@inject Blazored.LocalStorage.ILocalStorageService localStorage;
 
- 
-<AuthorizeView>
-    <Authorized>
+@*<AuthorizeView>*@
+    @*<Authorized>*@
         @*<h1>Hello, @CurrentUser.Identity.Name!</h1>*@
         @if (recalc)
         {
             updateplayerscores(true);
             recalc = false;
         }
-        <button class="btn-warning" @onclick="(() => ToggleAlts())">Toggle Alts</button>
-        &ensp;
-        <button class="btn-success" @onclick="(() => Filter(1))">All Classes</button>
-        &nbsp;
+        <span style="color:red">@strProc</span>
+        <div>
+        <ul class="" style="display: inline-block; margin-bottom: 0; padding-left: 0">
+        <li class="list-group-item" style="border: 0px; user-select: none; background-color: #e3e9ec">Show Alts &ensp;<label class="switch ">
+                <input type="checkbox" class="success" checked="@userState.showAlts" @onclick="(() => ToggleAlts())">
+                <span class="slider"></span>
+            </label>
+        </li>
+        </ul>
+        <button class="@(filterNumber==1 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(1))">All</button>
         <button class="@(filterNumber==2 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(2))">Plate</button>
         <button class="@(filterNumber==3 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(3))">Mail</button>
         <button class="@(filterNumber==4 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(4))">Leather</button>
@@ -30,46 +37,70 @@
         &nbsp;
         <button class="@(filterNumber==9 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(9))">Tank</button>
         <button class="@(filterNumber==10 ? "btn-primary":"btn-outline-primary")" @onclick="(() => Filter(10))">Healer</button>
+        <ul class="" style="display: inline-block; margin-bottom: 0; padding-left: 0">
+        <li class="list-group-item" style="border: 0px; user-select: none; background-color: #e3e9ec">Last 14 days &ensp;<label class="switch ">
+                <input type="checkbox" class="success" checked="@userState.show14Days" @onclick="(() => ToggleTime())">
+                <span class="slider"></span>
+            </label>
+        </li>
+        </ul>
+        </div>
         <table id="characters">
             @if (playerscores.Any())
             {
 
             <tr>
                 <th>Details</th>
-                <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Owner).ToList())">Owner</th>
+                <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Name).ToList())">Character</th>
+                @*<th class="n-resize" @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Owner).ToList())">Owner</th>*@
                 <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.Score).ToList())">Current Score</th>
                 <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalReceived).ToList())">Loot Received</th>
                 <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalGiven).ToList())">Loot Given</th>
                 <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderByDescending(x=> x.TotalAttendance).ToList())">Total Att</th>
                 
                 <th>Adjustment</th>
-                <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Name).ToList())">Character</th>
+                
                 <th class="n-resize" @onclick="(() => playerscores = playerscores.OrderBy(x=> x.Class).ToList())">Class</th>
-                <th>Main</th>
-                <th>Social</th>
-                <th>Comment</th>
+                @*<th>Social</th>*@
+                @*<th>Comment</th>*@
+                <th class="n-resize" @onclick="(() => OrderByLastRaided())">Last Raided</th>
             </tr>
             @foreach (var playchar in playerscores)
                 {
-                    if ((playchar.IsMain == 1 || showAlts) && (filter.Count == 0 || filter.Contains(playchar.Class)))
-                    {
-            <tr class="@playchar.Class">
-                <td class="pointer" @onclick="(() => ExaminePlayer(playchar))">&#x1F50D;&#xFE0E;</td>
-                @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+                if (!userState.show14Days || (playchar.Attendance.Count > 0 && (DateTime.Now - playchar.Attendance.OrderBy(i => i.Item1).ToList().Last().Item1).TotalDays<15))
+                {
+                if ((playchar.IsMain == 1 || userState.showAlts) && (filter.Count == 0 || filter.Contains(playchar.Class)))
+                {
+                <tr class="@playchar.Class">
+                    <td class="pointer" @onclick="(() => ExaminePlayer(playchar))">&#x1F50D;&#xFE0E;</td>
+                    @if (CurrentUser != null && (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers")))
                             {
-                <td class="pointer" @onclick="(() => ChangeOwner(playchar))">@playchar.Owner</td>
+                               if (playchar.IsMain > 0)
+                               {
+                                    <td class="pointer" @onclick="(() => ChangeOwner(playchar))">@playchar.Name</td>
+                                }
+                                else
+                                {
+                                    <td class="pointer" @onclick="(() => ChangeOwner(playchar))">@playchar.Name [@playchar.Owner]</td>
+                                }
                             }
                             else
-                            {
-                <td>@playchar.Owner</td>
+                            {if (playchar.IsMain > 0)
+                               {
+                                    <td>@playchar.Name</td>
+                                }
+                                else
+                                {
+                                    <td>@playchar.Name [@playchar.Owner]</td>
+                                }
                             }
                 <td>@playchar.Score.ToString()</td>
                 <td>@playchar.TotalReceived.ToString()</td>
                 <td>@playchar.TotalGiven.ToString()</td>
                 <td>@playchar.TotalAttendance.ToString()</td>
                 <td>@playchar.AdjustmentTotal.ToString()</td>
-                <td>@playchar.Name</td>
-                @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+                @*<td>@playchar.Name</td>*@
+                @if (CurrentUser != null && (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers")))
                             {
                 <td class="pointer" @onclick="(() => ChangeClass(playchar))">@playchar.Class</td>
                             }
@@ -77,8 +108,8 @@
                             {
                 <td>@playchar.Class</td>
                             }
-                <td>@playchar.IsMain</td>
-                @if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
+                            <td>@playchar.LastRaid</td>
+                @*@if (@context.User.IsInRole(ADMINISTRATION_ROLE) || context.User.IsInRole("Loot Managers"))
                             {
                 <td class="pointer" @onclick="(() => ChangeSocial(playchar))">@playchar.IsSocial</td>
                             }
@@ -93,8 +124,9 @@
                             else
                             {
                 <td>@playchar.Comment</td>
-                            }
-            </tr>
+                            }*@
+                            </tr>
+                        }
                     }
                 }
             }
@@ -103,7 +135,7 @@
             <tr><td colspan="6"><strong>No players in the system yet</strong></td></tr>
             }
         </table>
-        @if (@context.User.IsInRole(ADMINISTRATION_ROLE))
+        @if (CurrentUser != null && CurrentUser.IsInRole(ADMINISTRATION_ROLE))
         {
         @*<br /><p>You can only see this if you're in the 'Administrators' role.</p>*@
         }
@@ -216,18 +248,17 @@
             </div>
         </div>
         }
-    </Authorized>
+@*    </Authorized>
     <NotAuthorized>
         <p>You are not authorized to view this page</p>
-    </NotAuthorized>
-</AuthorizeView>
+    </NotAuthorized>*@
+@*</AuthorizeView>*@
 
 @code {
     [Inject]
     private IEventAggregator _eventAggregator { get; set; }
 
     string ADMINISTRATION_ROLE = "Administrators";
-    bool showAlts = false;
     List<PlayerCharacters> playerCharacters = new List<PlayerCharacters>();
     List<Attendance> Attendances = new List<Attendance> { };
     List<Raids> raids = new List<Raids> { };
@@ -236,6 +267,7 @@
     bool ShowCommentPopup = false;
     bool ShowClassPopup = false;
     string strError;
+    string strProc;
     string newOwner = "";
     string newComment = "";
     string newClass = "";
@@ -258,7 +290,7 @@
 
         CurrentUser = (await authenticationStateTask).User;
         await getData();
-        await updateplayerscores();
+        updateplayerscores();
     }
 
     private async Task getData()
@@ -321,10 +353,43 @@
         filterNumber = type;
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var sAlts = await localStorage.GetItemAsync<string>("showAlts");
+            if (sAlts != null)
+            {
+                if (Convert.ToBoolean(sAlts) != userState.showAlts) ToggleAlts();
+                StateHasChanged();
+            }
+            var s14 = await localStorage.GetItemAsync<string>("show14Days");
+            if (s14 != null)
+            {
+                if (Convert.ToBoolean(s14) != userState.show14Days) ToggleTime();
+                StateHasChanged();
+            } 
+        }
+    }
+
+
+    private void OrderByLastRaided()
+    {
+        //y.Attendance.OrderBy(i => i.Item1).LastOrDefault() ?? new Tuple<DateTime, decimal>(DateTime.MinValue, 0.0m)
+        playerscores.Sort(new PlayerDateSorter());
+    }
+
+
     private async Task updateplayerscores(bool force = false)
     {
+        //strProc = "updating scores...";
+        //await Task.Delay(1);
+        while (Globals.updating){
+            System.Threading.Thread.Sleep(10);
+        }
         if (force)
         {
+            Globals.updating = true;
             Globals.playerscores = new List<PlayerCharacterScores>();
             dataservice.dbContext = new AfterdawnDbContext(dataservice.dbContext.myoptions);
             await getData();
@@ -332,22 +397,27 @@
 
         if (Globals.playerscores.Count == 0)
         {
+            Globals.updating = true;
             foreach (var p in playerCharacters)
             {
                 PlayerCharacterScores newscore = new PlayerCharacterScores(p);
                 newscore.Adjustments = GetAdjustments(p);
                 newscore.TotalAttendance = GetAttendance(p);
+                newscore.Attendance = GetAttendances(p);
                 newscore.WeeklyAttendance = GetThisWeekAttendance(p);
                 newscore.LootReceived = GetReceived(p);
                 newscore.LootGiven = GetGiven(p);
                 newscore.TotalGiven = newscore.LootGiven.Count() * 3.0M;
                 newscore.TotalReceived = newscore.LootReceived.Count() * 6.0M;
-                newscore.Score = newscore.Adjustments.Sum(a => a.Adjustment) + newscore.TotalGiven - newscore.TotalReceived + newscore.TotalAttendance;
+                newscore.Score = Convert.ToDecimal(newscore.Adjustments.Sum(a => a.Adjustment)) + newscore.TotalGiven - newscore.TotalReceived + newscore.TotalAttendance;
                 Globals.playerscores.Add(newscore);
             }
 
         }
         playerscores = Globals.playerscores.OrderByDescending(x => x.Score).ToList();
+        //strProc = "";
+        //InvokeAsync(() => StateHasChanged());
+        Globals.updating = false;
         return;
     }
 
@@ -357,9 +427,16 @@
         UriHelper.NavigateTo("/userdetails/" + playchar.UserID, true);
     }
 
-    private void ToggleAlts()
+    private async void ToggleAlts()
     {
-        showAlts = !showAlts;
+        userState.showAlts = !userState.showAlts;
+        await localStorage.SetItemAsync("showAlts", userState.showAlts);
+    }
+
+    private async void ToggleTime()
+    {
+        userState.show14Days = !userState.show14Days;
+        await localStorage.SetItemAsync("show14Days", userState.show14Days);
     }
 
     private void ChangeOwner(PlayerCharacters playchar)
@@ -382,7 +459,10 @@
         await dataservice.DeleteCharactersAsync(updateplayer);
         Characters c = new Characters();
         c.Name = currentplayer.Name;
-        if (newOwnerPlayer.First().Name == c.Name) c.IsMain = 1;
+        if (newOwnerPlayer.First().Name == c.Name)
+            c.IsMain = 1;
+        else
+            c.IsMain = 0;
         c.IsSocial = (long)currentplayer.IsSocial;
         c.IsInactive = (long)currentplayer.IsInactive;
         //c.Comment = currentplayer.Comment;
@@ -399,6 +479,7 @@
         Globals.player_char = playerCharacters;
         Globals.playerscores = new List<PlayerCharacterScores>();
         ShowOwnerPopup = false;
+        recalc=true;
     }
 
 
@@ -474,6 +555,32 @@
             }
         }
         return total;
+    }
+
+    private List<Tuple<DateTime, decimal>> GetAttendances(PlayerCharacters playchar)
+    {
+
+        List<Tuple<DateTime, decimal>> att = new List<Tuple<DateTime, decimal>> { };
+        foreach (var p in playerCharacters)
+        {
+            if (p.Owner == playchar.Owner)
+            {
+
+                var t = Attendances.Where(a => a.CharacterName == p.Name);
+                foreach(var a in t)
+                {
+                    decimal v = 0;
+                    if (a.PresentStart > 0) v +=0.5m;
+                    if (a.PresentEnd > 0) v += 0.5m;
+                    if (v > 0)
+                    {
+                        var r = Globals.global_raids.Where(x => x.ID == a.RaidID).First();
+                        att.Add(new Tuple<DateTime, decimal>(DateTime.Parse(r.TimeStamp), v));
+                    }
+                }
+            }
+        }
+        return att;
     }
 
     private Int64 GetThisWeeksRaidID()

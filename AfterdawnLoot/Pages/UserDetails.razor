@@ -5,33 +5,41 @@
 @inject RoleManager<IdentityRole> _RoleManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject AfterdawnDataServices dataservice
-
+@inject NavigationManager UriHelper
+@inject UserState userState
+ 
 @using Microsoft.EntityFrameworkCore
+@using Plotly.Blazor.Traces.ScatterLib
 
-<AuthorizeView>
-    <Authorized>
+@*<AuthorizeView>
+    <Authorized>*@
         @if (recalc)
         {
             ReloadData();
             recalc = false;
         }
         <div class="container">
-            <div class="row"><h3>Details for @Globals.player_char.Where(x => x.UserID == UserID).Select(z => z.Name).FirstOrDefault()</h3></div>
-
+            <div class="row"><h3>Details for @Globals.player_char.Where(x => x.UserID == UserID && x.IsMain > 0).Select(z => z.Name).FirstOrDefault()</h3></div>
+             <PlotlyChart @bind-Config="config" @bind-Layout="layout" @bind-Data="data" @ref="chart"/>
             <div class="row" height="50%" width="100%">
                 <FullCalendar settings=@GetSettings() @ref="calendar" />
             </div>
 
         </div>
         <br />
-    </Authorized>
+@*    </Authorized>
     <NotAuthorized>
         <p>You are not authorized to view this page</p>
     </NotAuthorized>
 </AuthorizeView>
-
+*@
 @code
 {
+    PlotlyChart chart;
+    Config config = new Config();
+    Layout layout = new Layout();
+    IList<ITrace> data;
+
     [Inject]
     private IEventAggregator _eventAggregator { get; set; }
 
@@ -63,7 +71,113 @@
 
         _eventAggregator.Subscribe(this);
         CurrentUser = (await authenticationStateTask).User;
+        ChartData();
         Task.Run(LoadData);
+    }
+
+    private void ChartData()
+    {
+        try
+        {
+            List<object> newXList = new List<object> { };
+            List<object> newYList = new List<object> { };
+            List<string> newNotes = new List<string> { };
+
+            PlayerCharacterScores scores = Globals.playerscores.Where(p => p.UserID == UserID).First();
+            SortedDictionary<DateTime, decimal> deltas = new SortedDictionary<DateTime, decimal>{ };
+            SortedDictionary<DateTime, string> notes = new SortedDictionary<DateTime, string> { };
+
+            foreach (var g in scores.LootGiven)
+            {
+                if (deltas.Keys.Contains(g.Item1.Date))
+                {
+                    deltas[g.Item1.Date] = deltas[g.Item1] + 3;
+                    notes[g.Item1.Date] += " -" + ParseLootName(g.Item2);
+                }
+                else
+                {
+                    deltas.Add(g.Item1.Date, 3);
+                    notes.Add(g.Item1.Date, "-" + ParseLootName(g.Item2));
+                }
+            }
+
+            foreach (var g in scores.LootReceived)
+            {
+                if (deltas.Keys.Contains(g.Item1.Date))
+                {
+                    deltas[g.Item1] = deltas[g.Item1.Date] - 6;
+                    notes[g.Item1.Date] += " +" + ParseLootName(g.Item2);
+                }
+                else
+                {
+                    deltas.Add(g.Item1.Date, -6);
+                    notes.Add(g.Item1.Date, "+" + ParseLootName(g.Item2));
+                }
+            }
+
+            foreach (var g in scores.Adjustments)
+            {
+                DateTime d = DateTime.Parse(g.TimeStamp).Date;
+                if (deltas.Keys.Contains(d))
+                {
+                    deltas[d] = deltas[d] + (decimal)g.Adjustment;
+                    notes[d] = notes[d] + " " + "Manual Adjustment";
+                }
+                else
+                {
+                    deltas.Add(d, (decimal)g.Adjustment);
+                    notes.Add(d, "Manual Adjustment");
+                }
+            }
+
+            if (scores.Attendance != null)
+            {
+                foreach (var g in scores.Attendance)
+                {
+                    if (deltas.Keys.Contains(g.Item1.Date))
+                    {
+                        deltas[g.Item1.Date] = deltas[g.Item1.Date] + g.Item2;
+                        notes[g.Item1.Date] = notes[g.Item1.Date] + " Raid";
+                    }
+                    else
+                    {
+                        deltas.Add(g.Item1.Date, g.Item2);
+                        notes.Add(g.Item1.Date, "Raid");
+                    }
+                }
+            }
+
+            decimal runningTotal = 0;
+            foreach(var g in deltas)
+            {
+                newXList.Add(g.Key);
+                runningTotal = runningTotal + g.Value;
+                newYList.Add(runningTotal);
+            }
+            foreach(var d in notes)
+            {
+                newNotes.Add(d.Value);
+            }
+
+            // Using of the interface IList is important for the event callback!
+            data = new List<ITrace>
+        {
+            new Scatter
+            {
+                Name = "ScatterTrace",
+                Mode = ModeFlag.Lines | ModeFlag.Markers,
+                X = newXList,
+                Y = newYList,
+                TextArray = newNotes
+            }            
+        };
+            layout.PaperBgColor = "#e3e9ec";
+            layout.PlotBgColor = "#e3e9ec";
+        }
+        catch (Exception ex)
+        { 
+            //JsRuntime.InvokeVoidAsync("alert", ex.Message + ".. " + ex.InnerException); // Alert
+        }
     }
 
     private async void ReloadData()
@@ -78,6 +192,7 @@
         calendar.CalendarRefetchEvents();
         recalc = false;
         InvokeAsync(() => StateHasChanged());
+     
     }
 
     private async void LoadData()
@@ -87,7 +202,11 @@
         <BlazorFullCalendar.FullCalendar settings="@GetSettings()"></BlazorFullCalendar.FullCalendar>
         };
         this.InvokeAsync(() => StateHasChanged());
+
+        
     }
+
+    
 
     private  CalendarSettings GetSettings()
     {
@@ -102,6 +221,13 @@
     }
 
 
+     private static string ParseLootName(string lootstring)
+        {
+            var elem = lootstring.Split('"');
+            if (elem == null || elem.Length < 4) return "";
+            var name = elem[3];
 
+            return name;
+        }
 
     }

@@ -6,11 +6,15 @@
 @inject UserManager<IdentityUser> _UserManager
 @inject RoleManager<IdentityRole> _RoleManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserState userState
+ 
 
 <AuthorizeView>
     <Authorized>
         @if (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers"))
         {
+            <button @onclick="(() => AddGlobalAdjustment())">Add a Global Adjustment</button>
+            <br />
             <table id="characters">
                 <tr>
                     <th>Character</th>
@@ -109,6 +113,45 @@
                 </div>
             </div>
         }
+        @if (GlobalPopup)
+        {
+            <!-- This is the popup to create or edit a user -->
+            <div class="modal" tabindex="-1" style="display:block" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 class="modal-title">Add GLOBAL Adjustment - this can only be undone manually for each player</h3>
+                            <!-- Button to close the popup -->
+                            <button type="button" class="close"
+                                    @onclick="CloseGlobalAdjustment">
+                                <span aria-hidden="true">X</span>
+                            </button>
+                        </div>
+                        <!-- Edit form for the current user -->
+                        <div class="modal-body">
+
+                            Adjustment Percentage Ammount (percent to keep)
+                            <input type="text" class="form-control" placeholder="10" @bind="adjustment.Adjustment" id="ammount"/>
+                            <br />
+                            Reason for Adjustment
+                            <textarea class="form-control" rows="5" cols="80"
+                                      placeholder="Reason"
+                                      @bind="adjustment.Reason" />
+
+
+                            <br /><br />
+                            <!-- Button to save the user -->
+                            <button class="btn btn-primary"
+                                    @onclick="SaveGlobalAdjustment">
+                                Save
+                            </button>
+                            <span style="color:red">@strError</span>
+                            <br />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
     </Authorized>
     <NotAuthorized>
         <p>You are not authorized to view this page</p>
@@ -128,6 +171,7 @@
     private List<LootResults> lootresults;
     bool AdjustPopup = false;
     bool ViewPopup = false;
+    bool GlobalPopup = false;
     PlayerCharacters player;
     PointsAdjustment adjustment;
     List<PointsAdjustment> pointsview;
@@ -148,6 +192,54 @@
         AdjustPopup = true;
     }
 
+    private void AddGlobalAdjustment()
+    {
+        adjustment = new PointsAdjustment();
+        adjustment.CharacterName = "";
+        adjustment.AdjustedBy = CurrentUser.Identity.Name;
+        adjustment.Adjustment = 10;
+        GlobalPopup = true;
+    }
+
+    private async void SaveGlobalAdjustment()
+    {
+        if (adjustment.Reason == null || adjustment.Reason== "")
+        {
+            strError = "you must enter a reason";
+            return;
+        }
+        if (adjustment.Adjustment == 0 || adjustment.Adjustment < 0)
+        {
+            strError = "you must enter a positive integer value";
+            return;
+        }
+        double percentage = adjustment.Adjustment;
+        adjustment.TimeStamp = DateTime.Now.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
+        foreach(var c in playerCharacters.Where(p => p.IsMain > 0))
+        {
+            adjustment.CharacterName = c.Name;
+            double cscore = 0f;
+            adjustment.Adjustment = 0;
+            var scores = Globals.playerscores.Where(s => s.Name == c.Name);
+            if (scores != null && scores.Count() > 0) cscore = Convert.ToDouble(scores.First().Score);
+            if (cscore < 0) 
+                adjustment.Adjustment = -1 * cscore;                
+            else if (cscore > 0)
+                adjustment.Adjustment = -1 * Convert.ToDouble(cscore) * ((100.0 - percentage)/100.0);
+
+            adjustment.Adjustment = Convert.ToDouble(Math.Round(adjustment.Adjustment * 2.0) / 2.0);
+            if (adjustment.Adjustment != 0) dataservice.AddPointsAdjustmentAsync(adjustment);            
+        }
+        Globals.playerscores = new List<PlayerCharacterScores>();
+        await RefreshScoresAsync();
+        GlobalPopup = false;
+    }
+
+    private void CloseGlobalAdjustment()
+    {
+        GlobalPopup = false;
+    }
+
     private async void SaveAdjust()
     {
         if (adjustment.Reason == null || adjustment.Reason== "")
@@ -160,7 +252,6 @@
             strError = "you must enter an integer value (positive or negative)";
             return;
         }
-        //TODO: save adjustment
         adjustment.TimeStamp = DateTime.Now.ToString("s", System.Globalization.CultureInfo.InvariantCulture);
         await dataservice.AddPointsAdjustmentAsync(adjustment);
         Globals.playerscores = new List<PlayerCharacterScores>();
