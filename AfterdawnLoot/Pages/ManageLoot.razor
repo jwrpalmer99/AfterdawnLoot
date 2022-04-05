@@ -31,39 +31,53 @@
                 @foreach (var loot in raidloot)
                 {
                     <tr class="@loot.Class">
-                        @if (CurrentUser != null && (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers")))
+                        @if (GetLootResultDesc(loot.LootResult).ToLower().Contains("personal"))
                         {
-                            <td class="pointer" @onclick="(() => ChangeCharacter(loot))">@loot.Character</td>
+                            textcolour = "#902020";
                         }
                         else
                         {
-                            <td>@loot.Character</td>
+                            textcolour = "#000000";
                         }
+                        @if (CurrentUser != null && (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers")))
+                        {
+                            <td style="color: @textcolour" class="pointer" @onclick="(() => ChangeCharacter(loot))">@loot.Character</td>
+                        }
+                        else
+                        {
+                            <td style="color: @textcolour">@loot.Character</td>
+                        }
+                       
+                        <td>
+                        
 
-                        <td><a style="color: black" href="@ParseLootUrl(loot.Item)" target="_blank">@ParseLootName(loot.Item)</a></td>
+                        
+                        <a style="color: @textcolour" href="@ParseLootUrl(loot.Item)" target="_blank">@ParseLootName(loot.Item)</a>
+                        
+                        </td>
                         @if (CurrentUser != null && (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers")))
                         {
-                            <td class="pointer" @onclick="(() => ChangeResult(loot))">@GetLootResultDesc(loot.LootResult)</td>
+                            <td class="pointer" style="color: @textcolour" @onclick="(() => ChangeResult(loot))">@GetLootResultDesc(loot.LootResult)</td>
                         }
                         else
                         {
-                            <td>@GetLootResultDesc(loot.LootResult)</td>
+                            <td style="color: @textcolour">@GetLootResultDesc(loot.LootResult)</td>
                         }
                         @if (CurrentUser != null && (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers")))
                         {
-                            <td class="pointer" @onclick="(() => ChangeSource(loot))">@loot.SourceCharacter</td>
+                            <td class="pointer" style="color: @textcolour" @onclick="(() => ChangeSource(loot))">@loot.SourceCharacter</td>
                         }
                         else
                         {
-                            <td>@loot.SourceCharacter</td>
+                            <td style="color: @textcolour">@loot.SourceCharacter</td>
                         }
                         @if (CurrentUser != null && (CurrentUser.IsInRole(ADMINISTRATION_ROLE) || CurrentUser.IsInRole("Loot Managers")))
                         {
-                            <td class="pointer" @onclick="(() => DeleteLoot(loot))" style="text-align: center; padding: unset; font-size:x-large;">&#x1f5d1;</td>
+                            <td class="pointer"  @onclick="(() => DeleteLoot(loot))" style="text-align: center; padding: unset; font-size:x-large; color: @textcolour">&#x1f5d1;</td>
                         }
                         else
                         {
-                            <td>@loot.SourceCharacter</td>
+                            <td style="color: @textcolour">@loot.SourceCharacter</td>
                         }
                     </tr>
                 }
@@ -287,6 +301,7 @@
     bool ShowChangeSource = false;
     bool ShowDelete = false;
     string newResult;
+    string textcolour = "#000000";
     Raids newraid = new Raids();
     string strError = "";
     private string lootinput = "";
